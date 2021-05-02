@@ -256,6 +256,14 @@ func (t *TCPCtrlConnection) Read() {
 	}
 }
 
+func BuildCommand(command, params, token string) *CommandMsg {
+	return &CommandMsg{
+		Command: command,
+		Params:  params,
+		Token:   token,
+	}
+}
+
 func (t *TCPCtrlConnection) Write(cmd *CommandMsg) error {
 	msg, err := json.Marshal(cmd)
 	if err != nil {
