@@ -3,7 +3,7 @@
 set -ex
 
 rm -rf libbaresip
-rm go-baresip
+rm -f go-baresip
 mkdir libbaresip
 cd libbaresip
 

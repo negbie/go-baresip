@@ -10,7 +10,7 @@ apt install -y make gcc zlib1g-dev libssl-dev openssl git wget
 
 cd /mnt
 rm -rf libbaresip
-rm go-baresip
+rm -f go-baresip
 mkdir libbaresip
 cd libbaresip
 
