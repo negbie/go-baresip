@@ -38,16 +38,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"time"
 	"unsafe"
 )
 
 func Start() (err C.int) {
+
+	pwd, pwdErr := os.Getwd()
+	if pwdErr != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	ua := C.CString("baresip")
 	defer C.free(unsafe.Pointer(ua))
-
-	path := C.CString(".")
-	defer C.free(unsafe.Pointer(path))
 
 	err = C.libre_init()
 	if err != 0 {
@@ -55,8 +60,10 @@ func Start() (err C.int) {
 		return End(err)
 	}
 
-	C.conf_path_set(path)
-	C.play_set_path(C.baresip_player(), path)
+	cp := C.CString(pwd)
+	defer C.free(unsafe.Pointer(cp))
+
+	C.conf_path_set(cp)
 
 	err = C.conf_configure()
 	if err != 0 {
@@ -70,6 +77,11 @@ func Start() (err C.int) {
 		fmt.Printf("baresip main init failed with error code %d\n", err)
 		return End(err)
 	}
+
+	ap := C.CString(pwd + "/sounds")
+	defer C.free(unsafe.Pointer(ap))
+
+	C.play_set_path(C.baresip_player(), ap)
 
 	err = C.ua_init(ua, 1, 1, 1)
 	if err != 0 {
@@ -208,9 +220,9 @@ func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err err
 		return 0, nil, nil
 	}
 
-	if bytes.HasSuffix(data, []byte("\"},")) {
-		if i := bytes.Index(data, []byte(":{\"")); i != -1 {
-			return len(data), data[i+1 : len(data)-1], nil
+	if i := bytes.Index(data, []byte("\"}")); i != -1 {
+		if j := bytes.Index(data, []byte("{\"")); j != -1 {
+			return i + 2, data[j : i+2], nil
 		}
 	}
 
