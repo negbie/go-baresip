@@ -311,6 +311,12 @@ func (c *Ctrl) Write(cmd *CommandMsg) error {
 	return nil
 }
 
+func (c *Ctrl) Close() {
+	close(c.commandChan)
+	close(c.responseChan)
+	close(c.eventChan)
+}
+
 func (c *Ctrl) GetEvent(get func(e EventMsg)) {
 	for {
 		get(<-c.eventChan)
