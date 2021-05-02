@@ -289,7 +289,7 @@ func (c *Ctrl) Read() {
 	}
 }
 
-func Cmd(command, params, token string) *CommandMsg {
+func cmd(command, params, token string) *CommandMsg {
 	return &CommandMsg{
 		Command: command,
 		Params:  params,
@@ -297,8 +297,8 @@ func Cmd(command, params, token string) *CommandMsg {
 	}
 }
 
-func (c *Ctrl) Write(cmd *CommandMsg) error {
-	msg, err := json.Marshal(cmd)
+func (c *Ctrl) Exec(command, params, token string) error {
+	msg, err := json.Marshal(cmd(command, params, token))
 	if err != nil {
 		return err
 	}
