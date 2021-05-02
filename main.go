@@ -38,18 +38,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"time"
 	"unsafe"
 )
 
-func Start() (err C.int) {
-
-	pwd, pwdErr := os.Getwd()
-	if pwdErr != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+func Start(configPath, audioPath string) (err C.int) {
 
 	ua := C.CString("baresip")
 	defer C.free(unsafe.Pointer(ua))
@@ -60,10 +53,11 @@ func Start() (err C.int) {
 		return End(err)
 	}
 
-	cp := C.CString(pwd)
-	defer C.free(unsafe.Pointer(cp))
-
-	C.conf_path_set(cp)
+	if configPath != "" {
+		cp := C.CString(configPath)
+		defer C.free(unsafe.Pointer(cp))
+		C.conf_path_set(cp)
+	}
 
 	err = C.conf_configure()
 	if err != 0 {
@@ -78,10 +72,11 @@ func Start() (err C.int) {
 		return End(err)
 	}
 
-	ap := C.CString(pwd + "/sounds")
-	defer C.free(unsafe.Pointer(ap))
-
-	C.play_set_path(C.baresip_player(), ap)
+	if audioPath != "" {
+		ap := C.CString(audioPath)
+		defer C.free(unsafe.Pointer(ap))
+		C.play_set_path(C.baresip_player(), ap)
+	}
 
 	err = C.ua_init(ua, 1, 1, 1)
 	if err != 0 {
@@ -135,23 +130,23 @@ func End(err C.int) C.int {
 }
 
 func main() {
-	go StartTCPCtrlConnection()
-	Start()
+	go StartCtrl()
+	Start(".", "./sounds")
 	End(0)
 }
 
-func StartTCPCtrlConnection() {
+func StartCtrl() {
 	time.Sleep(2 * time.Second)
-	ctrl, err := NewTCPCtrlConnection()
+	c, err := NewCtrl()
 	if err != nil {
 		return
 	}
 
-	go ctrl.GetEvent(func(e EventMsg) {
+	go c.GetEvent(func(e EventMsg) {
 		fmt.Println(e)
 	})
 
-	go ctrl.GetResponse(func(r ResponseMsg) {
+	go c.GetResponse(func(r ResponseMsg) {
 		fmt.Println(r)
 	})
 }
@@ -185,33 +180,33 @@ type EventMsg struct {
 	Param           string `json:"param,omitempty"`
 }
 
-//TCPCtrlConnection
-type TCPCtrlConnection struct {
+//Ctrl
+type Ctrl struct {
 	conn         net.Conn
 	commandChan  chan string
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
 }
 
-//NewTCPCtrlConnection
-func NewTCPCtrlConnection() (*TCPCtrlConnection, error) {
-	ctrl := &TCPCtrlConnection{
+//NewCtrl
+func NewCtrl() (*Ctrl, error) {
+	c := &Ctrl{
 		commandChan:  make(chan string, 100),
 		responseChan: make(chan ResponseMsg, 100),
 		eventChan:    make(chan EventMsg, 100),
 	}
 
 	var err error
-	ctrl.conn, err = establishTCPCtrlConnection("127.0.0.1:4444")
+	c.conn, err = connectCtrl("127.0.0.1:4444")
 	if err != nil {
 		return nil, err
 	}
 
-	go ctrl.Read()
-	return ctrl, nil
+	go c.Read()
+	return c, nil
 }
 
-func establishTCPCtrlConnection(a string) (net.Conn, error) {
+func connectCtrl(a string) (net.Conn, error) {
 	return net.DialTimeout("tcp", a, 10*time.Second)
 }
 
@@ -233,9 +228,9 @@ func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err err
 	return
 }
 
-func (t *TCPCtrlConnection) Read() {
-	defer t.conn.Close()
-	scanner := bufio.NewScanner(t.conn)
+func (c *Ctrl) Read() {
+	defer c.conn.Close()
+	scanner := bufio.NewScanner(c.conn)
 	scanner.Split(eventSplitFunc)
 	for {
 		ok := scanner.Scan()
@@ -252,14 +247,14 @@ func (t *TCPCtrlConnection) Read() {
 			if err != nil {
 				fmt.Println(err, string(msg))
 			}
-			t.eventChan <- e
+			c.eventChan <- e
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
 			var r ResponseMsg
-			err := json.Unmarshal(msg, &r)
+			err := json.Unmarshal(bytes.Replace(msg, []byte("\\n"), []byte(""), -1), &r)
 			if err != nil {
 				fmt.Println(err, string(msg))
 			}
-			t.responseChan <- r
+			c.responseChan <- r
 		}
 	}
 
@@ -268,7 +263,7 @@ func (t *TCPCtrlConnection) Read() {
 	}
 }
 
-func BuildCommand(command, params, token string) *CommandMsg {
+func Cmd(command, params, token string) *CommandMsg {
 	return &CommandMsg{
 		Command: command,
 		Params:  params,
@@ -276,13 +271,13 @@ func BuildCommand(command, params, token string) *CommandMsg {
 	}
 }
 
-func (t *TCPCtrlConnection) Write(cmd *CommandMsg) error {
+func (c *Ctrl) Write(cmd *CommandMsg) error {
 	msg, err := json.Marshal(cmd)
 	if err != nil {
 		return err
 	}
 
-	_, err = t.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
+	_, err = c.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
 	if err != nil {
 		return err
 	}
@@ -290,14 +285,14 @@ func (t *TCPCtrlConnection) Write(cmd *CommandMsg) error {
 	return nil
 }
 
-func (t *TCPCtrlConnection) GetEvent(get func(e EventMsg)) {
+func (c *Ctrl) GetEvent(get func(e EventMsg)) {
 	for {
-		get(<-t.eventChan)
+		get(<-c.eventChan)
 	}
 }
 
-func (t *TCPCtrlConnection) GetResponse(get func(r ResponseMsg)) {
+func (c *Ctrl) GetResponse(get func(r ResponseMsg)) {
 	for {
-		get(<-t.responseChan)
+		get(<-c.responseChan)
 	}
 }
