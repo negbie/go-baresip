@@ -2,6 +2,9 @@
 
 set -ex
 
+command -v go version >/dev/null 2>&1 || { sudo apt install -y golang; }
+sudo apt install -y make gcc zlib1g-dev libssl-dev openssl git wget
+
 rm -rf libbaresip
 rm -f go-baresip
 mkdir libbaresip
