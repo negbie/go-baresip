@@ -3,6 +3,5 @@ config
 contacts
 current_contact
 uuid
-go-baresip
-libbaresip
 speaker.wav
+go-baresip-demo
