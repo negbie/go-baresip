@@ -67,6 +67,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"sync/atomic"
 	"time"
@@ -135,13 +136,13 @@ func (b *Baresip) connectCtrl() {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		fmt.Printf("Connection to %s established\n", b.addr)
+		log.Printf("Connection to %s established\n", b.addr)
 		break
 	}
 
 	if b.conn == nil {
 		atomic.StoreUint32(&b.connAlive, 0)
-		fmt.Printf("can't connect to %s, exit!\n", b.addr)
+		log.Printf("can't connect to %s, exit!\n", b.addr)
 		return
 	}
 
@@ -176,7 +177,7 @@ func (b *Baresip) read() {
 	for {
 		ok := scanner.Scan()
 		if !ok {
-			fmt.Printf("scanner end\n")
+			log.Printf("scanner end\n")
 			break
 		}
 
@@ -186,21 +187,21 @@ func (b *Baresip) read() {
 			var e EventMsg
 			err := json.Unmarshal(msg, &e)
 			if err != nil {
-				fmt.Println(err, string(msg))
+				log.Println(err, string(msg))
 			}
 			b.eventChan <- e
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
 			var r ResponseMsg
 			err := json.Unmarshal(bytes.Replace(msg, []byte("\\n"), []byte(""), -1), &r)
 			if err != nil {
-				fmt.Println(err, string(msg))
+				log.Println(err, string(msg))
 			}
 			b.responseChan <- r
 		}
 	}
 
 	if scanner.Err() != nil {
-		fmt.Printf("scanner error: %s\n", scanner.Err())
+		log.Printf("scanner error: %s\n", scanner.Err())
 	}
 }
 
@@ -270,7 +271,7 @@ func (b *Baresip) Run() (err C.int) {
 
 	err = C.libre_init()
 	if err != 0 {
-		fmt.Printf("libre init failed with error code %d\n", err)
+		log.Printf("libre init failed with error code %d\n", err)
 		return b.end(err)
 	}
 
@@ -282,14 +283,14 @@ func (b *Baresip) Run() (err C.int) {
 
 	err = C.conf_configure()
 	if err != 0 {
-		fmt.Printf("baresip configure failed with error code %d\n", err)
+		log.Printf("baresip configure failed with error code %d\n", err)
 		return b.end(err)
 	}
 
 	// Top-level baresip struct init must be done AFTER configuration is complete.
 	err = C.baresip_init(C.conf_config())
 	if err != 0 {
-		fmt.Printf("baresip main init failed with error code %d\n", err)
+		log.Printf("baresip main init failed with error code %d\n", err)
 		return b.end(err)
 	}
 
@@ -299,7 +300,7 @@ func (b *Baresip) Run() (err C.int) {
 
 	err = C.ua_init(ua, 1, 1, 1)
 	if err != 0 {
-		fmt.Printf("baresip ua init failed with error code %d\n", err)
+		log.Printf("baresip ua init failed with error code %d\n", err)
 		return b.end(err)
 	}
 
@@ -308,7 +309,7 @@ func (b *Baresip) Run() (err C.int) {
 
 	err = C.conf_modules()
 	if err != 0 {
-		fmt.Printf("baresip load modules failed with error code %d\n", err)
+		log.Printf("baresip load modules failed with error code %d\n", err)
 		return b.end(err)
 	}
 

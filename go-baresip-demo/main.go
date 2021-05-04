@@ -1,13 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"os"
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
 )
 
 func main() {
+	logFile := "go-baresip-demo.log"
+	f, _ := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	defer f.Close()
+
+	log.SetOutput(&gobaresip.Logger{
+		Filename:   logFile,
+		MaxSize:    14, // mb
+		MaxBackups: 7,
+		MaxAge:     21, //days
+		Compress:   true,
+	})
 
 	gb := gobaresip.New("127.0.0.1:4444", ".", "./sounds")
 
@@ -18,10 +30,10 @@ func main() {
 		for {
 			select {
 			case e := <-eChan:
-				fmt.Println(e)
+				log.Println(e)
 
 			case r := <-rChan:
-				fmt.Println(r)
+				log.Println(r)
 
 			}
 		}
@@ -31,12 +43,12 @@ func main() {
 		time.Sleep(2 * time.Second)
 
 		if err := gb.Reginfo(); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}()
 
 	err := gb.Run()
 	if err != 0 {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
