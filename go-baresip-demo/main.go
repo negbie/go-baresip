@@ -29,7 +29,8 @@ func main() {
 
 	go func() {
 		time.Sleep(2 * time.Second)
-		if err := gb.Callstat(); err != nil {
+
+		if err := gb.Reginfo(); err != nil {
 			fmt.Println(err)
 		}
 	}()

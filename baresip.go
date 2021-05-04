@@ -276,11 +276,9 @@ func (b *Baresip) Run() (err C.int) {
 
 	C.log_enable_stdout(0)
 
-	if b.configPath != "" {
-		cp := C.CString(b.configPath)
-		defer C.free(unsafe.Pointer(cp))
-		C.conf_path_set(cp)
-	}
+	cp := C.CString(b.configPath)
+	defer C.free(unsafe.Pointer(cp))
+	C.conf_path_set(cp)
 
 	err = C.conf_configure()
 	if err != 0 {
@@ -295,11 +293,9 @@ func (b *Baresip) Run() (err C.int) {
 		return b.end(err)
 	}
 
-	if b.audioPath != "" {
-		ap := C.CString(b.audioPath)
-		defer C.free(unsafe.Pointer(ap))
-		C.play_set_path(C.baresip_player(), ap)
-	}
+	ap := C.CString(b.audioPath)
+	defer C.free(unsafe.Pointer(ap))
+	C.play_set_path(C.baresip_player(), ap)
 
 	err = C.ua_init(ua, 1, 1, 1)
 	if err != 0 {
@@ -315,6 +311,10 @@ func (b *Baresip) Run() (err C.int) {
 		fmt.Printf("baresip load modules failed with error code %d\n", err)
 		return b.end(err)
 	}
+
+	ct := C.CString("ctrl_tcp")
+	defer C.free(unsafe.Pointer(ct))
+	C.module_load(cp, ct)
 
 	//C.sys_daemon()
 	//C.uag_enable_sip_trace(1)
