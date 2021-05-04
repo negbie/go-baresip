@@ -32,7 +32,7 @@ type LokiClient struct {
 	quit           chan struct{}
 	maxBatch       int
 	maxWaitTime    time.Duration
-	wait           sync.WaitGroup
+	wg             sync.WaitGroup
 }
 
 type Message struct {
@@ -65,14 +65,14 @@ func CreateLokiClient(url string, maxBatch int, maxWaitSeconds int) (*LokiClient
 	client.endpoints.query = "/loki/api/v1/query"
 	client.endpoints.ready = "/ready"
 
-	client.wait.Add(1)
+	client.wg.Add(1)
 	go client.run()
 	return &client, nil
 }
 
 func (client *LokiClient) Close() {
 	close(client.quit)
-	client.wait.Wait()
+	client.wg.Wait()
 }
 
 func (client *LokiClient) run() {
@@ -83,7 +83,7 @@ func (client *LokiClient) run() {
 		if batchCounter > 0 {
 			client.send()
 		}
-		client.wait.Done()
+		client.wg.Done()
 	}()
 
 	for {

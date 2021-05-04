@@ -109,17 +109,19 @@ type Baresip struct {
 	addr         string
 	configPath   string
 	audioPath    string
+	debug        bool
 	conn         net.Conn
 	connAlive    uint32
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
 }
 
-func New(addr, configPath, audioPath string) *Baresip {
+func New(addr, configPath, audioPath string, debug bool) *Baresip {
 	b := &Baresip{
 		addr:         addr,
 		configPath:   configPath,
 		audioPath:    audioPath,
+		debug:        debug,
 		responseChan: make(chan ResponseMsg, 100),
 		eventChan:    make(chan EventMsg, 100),
 	}
@@ -279,7 +281,11 @@ func (b *Baresip) Run() (err C.int) {
 		return b.end(err)
 	}
 
-	C.log_enable_stdout(0)
+	if b.debug {
+		C.log_enable_stdout(1)
+	} else {
+		C.log_enable_stdout(0)
+	}
 
 	cp := C.CString(b.configPath)
 	defer C.free(unsafe.Pointer(cp))
@@ -321,9 +327,14 @@ func (b *Baresip) Run() (err C.int) {
 	defer C.free(unsafe.Pointer(ct))
 	C.module_load(cp, ct)
 
-	//C.sys_daemon()
-	//C.log_enable_debug(1)
-	//C.uag_enable_sip_trace(1)
+	if b.debug {
+		C.log_enable_debug(1)
+		C.uag_enable_sip_trace(1)
+	} else {
+		C.log_enable_debug(0)
+		C.uag_enable_sip_trace(0)
+	}
+
 	/*
 		ua_eprm := C.CString("")
 		defer C.free(unsafe.Pointer(ua_eprm))

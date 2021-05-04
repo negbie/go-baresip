@@ -24,7 +24,7 @@ func main() {
 
 	defer client.Close()
 
-	gb := gobaresip.New("127.0.0.1:4444", ".", "./sounds")
+	gb := gobaresip.New("127.0.0.1:4444", ".", "./sounds", true)
 
 	eChan := gb.GetEventChan()
 	rChan := gb.GetResponseChan()
