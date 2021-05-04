@@ -241,3 +241,12 @@ func (b *Baresip) Uareg(s ...string) error {
 	}
 	return b.Exec(c, "", "command_"+c)
 }
+
+// Quit will quit baresip
+func (b *Baresip) Quit(s ...string) error {
+	c := "quit"
+	if len(s) > 0 {
+		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+	}
+	return b.Exec(c, "", "command_"+c)
+}

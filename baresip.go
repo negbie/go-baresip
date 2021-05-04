@@ -241,7 +241,7 @@ func (b *Baresip) Close() {
 	close(b.eventChan)
 }
 
-func (b *Baresip) handleEvent(get func(e EventMsg)) {
+func (b *Baresip) GetEvent(get func(e EventMsg)) {
 	go func() {
 		for {
 			get(<-b.eventChan)
@@ -249,7 +249,7 @@ func (b *Baresip) handleEvent(get func(e EventMsg)) {
 	}()
 }
 
-func (b *Baresip) handleResponse(get func(r ResponseMsg)) {
+func (b *Baresip) GetResponse(get func(r ResponseMsg)) {
 	go func() {
 		for {
 			get(<-b.responseChan)
@@ -257,13 +257,13 @@ func (b *Baresip) handleResponse(get func(r ResponseMsg)) {
 	}()
 }
 
-// ReadChan returns the receive-only EventMsg channel for reading data
-func (b *Baresip) EventChan() <-chan EventMsg {
+// GetEventChan returns the receive-only EventMsg channel for reading data
+func (b *Baresip) GetEventChan() <-chan EventMsg {
 	return b.eventChan
 }
 
-// ResponseChan returns the receive-only ResponseMsg channel for reading data
-func (b *Baresip) ResponseChan() <-chan ResponseMsg {
+// GetResponseChan returns the receive-only ResponseMsg channel for reading data
+func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 	return b.responseChan
 }
 
@@ -322,8 +322,8 @@ func (b *Baresip) Run() (err C.int) {
 	C.module_load(cp, ct)
 
 	//C.sys_daemon()
-	//C.uag_enable_sip_trace(1)
 	//C.log_enable_debug(1)
+	//C.uag_enable_sip_trace(1)
 	/*
 		ua_eprm := C.CString("")
 		defer C.free(unsafe.Pointer(ua_eprm))
