@@ -286,6 +286,8 @@ func (b *Baresip) Run() error {
 	ua := C.CString(b.userAgent)
 	defer C.free(unsafe.Pointer(ua))
 
+	C.sys_coredump_set(1)
+
 	err := C.libre_init()
 	if err != 0 {
 		log.Printf("libre init failed with error code %d\n", err)
