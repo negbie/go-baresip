@@ -23,12 +23,12 @@ func main() {
 		return
 	}
 
-	client, err := CreateLokiClient(*lokiServer, 4, 2)
+	loki, err := NewLokiClient(*lokiServer, 4, 2)
 	if err != nil {
 		log.Println(err)
 	}
 
-	defer client.Close()
+	defer loki.Close()
 
 	eChan := gb.GetEventChan()
 	rChan := gb.GetResponseChan()
@@ -38,10 +38,10 @@ func main() {
 			select {
 			case e := <-eChan:
 				log.Println(e)
-				client.Send(staticlokiLabel, e.Raw)
+				loki.Send(staticlokiLabel, e.Raw)
 			case r := <-rChan:
 				log.Println(r)
-				client.Send(staticlokiLabel, r.Raw)
+				loki.Send(staticlokiLabel, r.Raw)
 			}
 		}
 	}()
@@ -57,5 +57,5 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-
+	defer gb.Close()
 }

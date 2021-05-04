@@ -47,13 +47,13 @@ type Endpoints struct {
 	ready string
 }
 
-// CreateLokiClient creates a new loki client
+// NewLokiClient creates a new loki client
 // The client runs in a goroutine and sends the data either
 // once it reaches the maxBatch or when it waited for maxWaitTime
 //
 // the batch counter is incremented every time add is called
 // maxWaitTime uses nanoseconds
-func CreateLokiClient(url string, maxBatch int, maxWaitSeconds int) (*LokiClient, error) {
+func NewLokiClient(url string, maxBatch int, maxWaitSeconds int) (*LokiClient, error) {
 	client := LokiClient{
 		url:         url,
 		maxBatch:    maxBatch,

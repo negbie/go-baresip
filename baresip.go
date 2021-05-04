@@ -191,6 +191,10 @@ func (b *Baresip) read() {
 			break
 		}
 
+		if atomic.LoadUint32(&b.connAlive) == 0 {
+			return
+		}
+
 		msg := scanner.Bytes()
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
@@ -245,6 +249,7 @@ func (b *Baresip) Exec(command, params, token string) error {
 }
 
 func (b *Baresip) Close() {
+	atomic.StoreUint32(&b.connAlive, 1)
 	close(b.responseChan)
 	close(b.eventChan)
 }
