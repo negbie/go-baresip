@@ -2,24 +2,12 @@ package main
 
 import (
 	"log"
-	"os"
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
 )
 
 func main() {
-	logFile := "go-baresip-demo.log"
-	f, _ := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	defer f.Close()
-
-	log.SetOutput(&gobaresip.Logger{
-		Filename:   logFile,
-		MaxSize:    14, // mb
-		MaxBackups: 7,
-		MaxAge:     21, //days
-		Compress:   true,
-	})
 
 	gb := gobaresip.New("127.0.0.1:4444", ".", "./sounds")
 

@@ -87,6 +87,7 @@ type ResponseMsg struct {
 	Ok       bool   `json:"ok,omitempty"`
 	Data     string `json:"data,omitempty"`
 	Token    string `json:"token,omitempty"`
+	Raw      string
 }
 
 //EventMsg
@@ -101,6 +102,7 @@ type EventMsg struct {
 	ID              string `json:"id,omitempty"`
 	RemoteAudioDir  string `json:"remoteaudiodir,omitempty"`
 	Param           string `json:"param,omitempty"`
+	Raw             string
 }
 
 type Baresip struct {
@@ -185,6 +187,7 @@ func (b *Baresip) read() {
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
 			var e EventMsg
+			e.Raw = string(msg)
 			err := json.Unmarshal(msg, &e)
 			if err != nil {
 				log.Println(err, string(msg))
@@ -192,6 +195,7 @@ func (b *Baresip) read() {
 			b.eventChan <- e
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
 			var r ResponseMsg
+			r.Raw = string(msg)
 			err := json.Unmarshal(bytes.Replace(msg, []byte("\\n"), []byte(""), -1), &r)
 			if err != nil {
 				log.Println(err, string(msg))
