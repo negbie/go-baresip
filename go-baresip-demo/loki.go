@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -81,7 +82,10 @@ func (client *LokiClient) run() {
 
 	defer func() {
 		if batchCounter > 0 {
-			client.send()
+			err := client.send()
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		client.wg.Done()
 	}()
@@ -95,14 +99,20 @@ func (client *LokiClient) run() {
 				append(client.currentMessage.Streams, *stream)
 			batchCounter++
 			if batchCounter == client.maxBatch {
-				client.send()
+				err := client.send()
+				if err != nil {
+					log.Println(err)
+				}
 				batchCounter = 0
 				client.currentMessage.Streams = []jsonStream{}
 				maxWait.Reset(client.maxWaitTime)
 			}
 		case <-maxWait.C:
 			if batchCounter > 0 {
-				client.send()
+				err := client.send()
+				if err != nil {
+					log.Println(err)
+				}
 				client.currentMessage.Streams = []jsonStream{}
 				batchCounter = 0
 			}

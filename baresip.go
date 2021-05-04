@@ -106,7 +106,8 @@ type EventMsg struct {
 }
 
 type Baresip struct {
-	addr         string
+	userAgent    string
+	ctrlAddr     string
 	configPath   string
 	audioPath    string
 	debug        bool
@@ -116,37 +117,42 @@ type Baresip struct {
 	eventChan    chan EventMsg
 }
 
-func New(addr, configPath, audioPath string, debug bool) *Baresip {
+func New(userAgent string, options ...func(*Baresip) error) (*Baresip, error) {
 	b := &Baresip{
-		addr:         addr,
-		configPath:   configPath,
-		audioPath:    audioPath,
-		debug:        debug,
+		ctrlAddr:     "127.0.0.1:4444",
 		responseChan: make(chan ResponseMsg, 100),
 		eventChan:    make(chan EventMsg, 100),
 	}
 
+	if err := b.SetOption(options...); err != nil {
+		return nil, err
+	}
+
+	if userAgent == "" || b.userAgent == "" {
+		b.userAgent = "go-baresip"
+	}
+
 	go b.connectCtrl()
 
-	return b
+	return b, nil
 }
 
 func (b *Baresip) connectCtrl() {
 	var err error
 
 	for i := 0; i < 10; i++ {
-		b.conn, err = net.Dial("tcp", b.addr)
+		b.conn, err = net.Dial("tcp", b.ctrlAddr)
 		if err != nil {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		log.Printf("Connection to %s established\n", b.addr)
+		log.Printf("Connection to %s established\n", b.ctrlAddr)
 		break
 	}
 
 	if b.conn == nil {
 		atomic.StoreUint32(&b.connAlive, 0)
-		log.Printf("can't connect to %s, exit!\n", b.addr)
+		log.Printf("can't connect to %s, exit!\n", b.ctrlAddr)
 		return
 	}
 
@@ -219,7 +225,7 @@ func cmd(command, params, token string) *CommandMsg {
 	}
 }
 
-// Exec sends a command over ctrl_tcp to baresip
+// Exec sends a command over ctrl_tcp to baresip.
 func (b *Baresip) Exec(command, params, token string) error {
 	msg, err := json.Marshal(cmd(command, params, token))
 	if err != nil {
@@ -259,23 +265,23 @@ func (b *Baresip) GetResponse(get func(r ResponseMsg)) {
 	}()
 }
 
-// GetEventChan returns the receive-only EventMsg channel for reading data
+// GetEventChan returns the receive-only EventMsg channel for reading data.
 func (b *Baresip) GetEventChan() <-chan EventMsg {
 	return b.eventChan
 }
 
-// GetResponseChan returns the receive-only ResponseMsg channel for reading data
+// GetResponseChan returns the receive-only ResponseMsg channel for reading data.
 func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 	return b.responseChan
 }
 
 // Run a baresip instance
-func (b *Baresip) Run() (err C.int) {
+func (b *Baresip) Run() error {
 
 	ua := C.CString("go-baresip")
 	defer C.free(unsafe.Pointer(ua))
 
-	err = C.libre_init()
+	err := C.libre_init()
 	if err != 0 {
 		log.Printf("libre init failed with error code %d\n", err)
 		return b.end(err)
@@ -287,9 +293,11 @@ func (b *Baresip) Run() (err C.int) {
 		C.log_enable_stdout(0)
 	}
 
-	cp := C.CString(b.configPath)
-	defer C.free(unsafe.Pointer(cp))
-	C.conf_path_set(cp)
+	if b.configPath != "" {
+		cp := C.CString(b.configPath)
+		defer C.free(unsafe.Pointer(cp))
+		C.conf_path_set(cp)
+	}
 
 	err = C.conf_configure()
 	if err != 0 {
@@ -304,9 +312,11 @@ func (b *Baresip) Run() (err C.int) {
 		return b.end(err)
 	}
 
-	ap := C.CString(b.audioPath)
-	defer C.free(unsafe.Pointer(ap))
-	C.play_set_path(C.baresip_player(), ap)
+	if b.audioPath != "" {
+		ap := C.CString(b.audioPath)
+		defer C.free(unsafe.Pointer(ap))
+		C.play_set_path(C.baresip_player(), ap)
+	}
 
 	err = C.ua_init(ua, 1, 1, 1)
 	if err != 0 {
@@ -325,7 +335,7 @@ func (b *Baresip) Run() (err C.int) {
 
 	ct := C.CString("ctrl_tcp")
 	defer C.free(unsafe.Pointer(ct))
-	C.module_load(cp, ct)
+	C.module_preload(ct)
 
 	if b.debug {
 		C.log_enable_debug(1)
@@ -344,7 +354,7 @@ func (b *Baresip) Run() (err C.int) {
 	return b.end(C.mainLoop())
 }
 
-func (b *Baresip) end(err C.int) C.int {
+func (b *Baresip) end(err C.int) error {
 	if err != 0 {
 		C.ua_stop_all(1)
 	}
@@ -364,5 +374,5 @@ func (b *Baresip) end(err C.int) C.int {
 	C.tmr_debug()
 	C.mem_debug()
 
-	return err
+	return fmt.Errorf("%d", err)
 }
