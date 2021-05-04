@@ -29,7 +29,7 @@ func main() {
 
 	go func() {
 		time.Sleep(2 * time.Second)
-		if err := gb.Exec("listcalls", "", "asdf"); err != nil {
+		if err := gb.Callstat(); err != nil {
 			fmt.Println(err)
 		}
 	}()

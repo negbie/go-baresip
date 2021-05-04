@@ -274,6 +274,8 @@ func (b *Baresip) Run() (err C.int) {
 		return b.end(err)
 	}
 
+	C.log_enable_stdout(0)
+
 	if b.configPath != "" {
 		cp := C.CString(b.configPath)
 		defer C.free(unsafe.Pointer(cp))
@@ -322,8 +324,6 @@ func (b *Baresip) Run() (err C.int) {
 		defer C.free(unsafe.Pointer(ua_eprm))
 		err = C.uag_set_extra_params(ua_eprm)
 	*/
-
-	C.log_enable_stdout(0)
 
 	return b.end(C.mainLoop())
 }
