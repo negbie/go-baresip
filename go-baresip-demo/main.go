@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
 )
@@ -23,6 +24,13 @@ func main() {
 				fmt.Println(r)
 
 			}
+		}
+	}()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		if err := gb.Exec("listcalls", "", "asdf"); err != nil {
+			fmt.Println(err)
 		}
 	}()
 

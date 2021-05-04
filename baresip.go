@@ -68,6 +68,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sync/atomic"
 	"time"
 	"unsafe"
 )
@@ -106,12 +107,13 @@ type Baresip struct {
 	configPath   string
 	audioPath    string
 	conn         net.Conn
+	connAlive    uint32
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
 }
 
 func New(addr, configPath, audioPath string) *Baresip {
-	c := &Baresip{
+	b := &Baresip{
 		addr:         addr,
 		configPath:   configPath,
 		audioPath:    audioPath,
@@ -119,33 +121,31 @@ func New(addr, configPath, audioPath string) *Baresip {
 		eventChan:    make(chan EventMsg, 100),
 	}
 
-	go c.connectCtrl()
+	go b.connectCtrl()
 
-	return c
+	return b
 }
 
 func (b *Baresip) connectCtrl() {
 	var err error
-	bco := &Backoff{
-		Max: 1 * time.Minute,
-	}
 
-	for {
+	for i := 0; i < 10; i++ {
 		b.conn, err = net.Dial("tcp", b.addr)
 		if err != nil {
-			d := bco.Duration()
-
-			if d.Seconds() > 10 {
-				fmt.Printf("can't connect to %s, exit!\n", b.addr)
-				return
-			}
-			fmt.Printf("%s, reconnecting in %s\n", err, d)
-			time.Sleep(d)
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 		fmt.Printf("Connection to %s established\n", b.addr)
 		break
 	}
+
+	if b.conn == nil {
+		atomic.StoreUint32(&b.connAlive, 0)
+		fmt.Printf("can't connect to %s, exit!\n", b.addr)
+		return
+	}
+
+	atomic.StoreUint32(&b.connAlive, 1)
 
 	b.read()
 }
@@ -170,6 +170,7 @@ func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err err
 
 func (b *Baresip) read() {
 	defer b.conn.Close()
+	defer atomic.StoreUint32(&b.connAlive, 0)
 	scanner := bufio.NewScanner(b.conn)
 	scanner.Split(eventSplitFunc)
 	for {
@@ -212,13 +213,17 @@ func cmd(command, params, token string) *CommandMsg {
 }
 
 // Exec sends a command over ctrl_tcp to baresip
-func (c *Baresip) Exec(command, params, token string) error {
+func (b *Baresip) Exec(command, params, token string) error {
 	msg, err := json.Marshal(cmd(command, params, token))
 	if err != nil {
 		return err
 	}
 
-	_, err = c.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
+	if atomic.LoadUint32(&b.connAlive) == 0 {
+		return fmt.Errorf("can't write to closed tcp_ctrl connection")
+	}
+
+	_, err = b.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
 	if err != nil {
 		return err
 	}
@@ -317,6 +322,8 @@ func (b *Baresip) Run() (err C.int) {
 		defer C.free(unsafe.Pointer(ua_eprm))
 		err = C.uag_set_extra_params(ua_eprm)
 	*/
+
+	C.log_enable_stdout(0)
 
 	return b.end(C.mainLoop())
 }
