@@ -17,7 +17,7 @@ func main() {
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP address")
 	flag.Parse()
 
-	gb, err := gobaresip.New("go-baresip", gobaresip.SetConfigPath("."), gobaresip.SetAudioPath("./sounds"))
+	gb, err := gobaresip.New(gobaresip.SetConfigPath("."), gobaresip.SetAudioPath("./sounds"))
 	if err != nil {
 		log.Println(err)
 		return

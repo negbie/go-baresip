@@ -117,7 +117,7 @@ type Baresip struct {
 	eventChan    chan EventMsg
 }
 
-func New(userAgent string, options ...func(*Baresip) error) (*Baresip, error) {
+func New(options ...func(*Baresip) error) (*Baresip, error) {
 	b := &Baresip{
 		ctrlAddr:     "127.0.0.1:4444",
 		responseChan: make(chan ResponseMsg, 100),
@@ -128,7 +128,7 @@ func New(userAgent string, options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
-	if userAgent == "" || b.userAgent == "" {
+	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
 	}
 
@@ -278,7 +278,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 // Run a baresip instance
 func (b *Baresip) Run() error {
 
-	ua := C.CString("go-baresip")
+	ua := C.CString(b.userAgent)
 	defer C.free(unsafe.Pointer(ua))
 
 	err := C.libre_init()

@@ -11,33 +11,41 @@ func (b *Baresip) SetOption(options ...func(*Baresip) error) error {
 }
 
 // SetCtrlTCPAddr sets the ctrl_tcp modules address.
-func SetCtrlTCPAddr(a string) func(*Baresip) error {
+func SetCtrlTCPAddr(opt string) func(*Baresip) error {
 	return func(b *Baresip) error {
-		b.ctrlAddr = a
+		b.ctrlAddr = opt
 		return nil
 	}
 }
 
 // SetConfigPath sets the config path.
-func SetConfigPath(p string) func(*Baresip) error {
+func SetConfigPath(opt string) func(*Baresip) error {
 	return func(b *Baresip) error {
-		b.configPath = p
+		b.configPath = opt
 		return nil
 	}
 }
 
 // SetAudioPath sets the audio path.
-func SetAudioPath(p string) func(*Baresip) error {
+func SetAudioPath(opt string) func(*Baresip) error {
 	return func(b *Baresip) error {
-		b.audioPath = p
+		b.audioPath = opt
 		return nil
 	}
 }
 
 // SetDebug sets the debug mode.
-func SetDebug(d bool) func(*Baresip) error {
+func SetDebug(opt bool) func(*Baresip) error {
 	return func(b *Baresip) error {
-		b.debug = d
+		b.debug = opt
+		return nil
+	}
+}
+
+// SetUserAgent sets the UserAgent.
+func SetUserAgent(opt string) func(*Baresip) error {
+	return func(b *Baresip) error {
+		b.userAgent = opt
 		return nil
 	}
 }
