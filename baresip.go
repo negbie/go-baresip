@@ -163,9 +163,9 @@ func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err err
 		return 0, nil, nil
 	}
 
-	if i := bytes.Index(data, []byte("\"}")); i != -1 {
-		if j := bytes.Index(data, []byte("{\"")); j != -1 {
-			return i + 2, data[j : i+2], nil
+	if i := bytes.Index(data, []byte("},")); i != -1 {
+		if j := bytes.Index(data, []byte(":{")); j != -1 {
+			return i + 1, data[j+1 : i+1], nil
 		}
 	}
 

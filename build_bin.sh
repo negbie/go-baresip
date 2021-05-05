@@ -43,5 +43,5 @@ cp libbaresip.a ../../baresip; cd ..
 mv re/include ../re
 mv rem/include ../rem
 mv baresip/include ../baresip
-#cd ..; rm -rf git
+cd ..; rm -rf git
 

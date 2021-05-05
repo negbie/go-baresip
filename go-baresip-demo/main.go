@@ -18,7 +18,9 @@ func main() {
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
 	autoDial := flag.String("auto_dial", "", "Auto dial SIP URI if it's not empty")
 	autoDialDelay := flag.Int("auto_dial_delay", 5000, "Set delay before auto dial [ms]")
-	debug := flag.Bool("debug", false, "Debug mode")
+	autoHangup := flag.Bool("auto_hangup", true, "Set auto hangup")
+	autoHangupDelay := flag.Int("auto_hangup_delay", 5000, "Set delay before auto hangup [ms]")
+	debug := flag.Bool("debug", false, "Set debug mode")
 	flag.Parse()
 
 	gb, err := gobaresip.New(gobaresip.SetConfigPath("."), gobaresip.SetAudioPath("./sounds"), gobaresip.SetDebug(*debug))
@@ -65,6 +67,19 @@ func main() {
 	go func() {
 		// Give baresip some time to init and register ua
 		time.Sleep(1 * time.Second)
+
+		if *autoHangup {
+			if *autoHangupDelay >= 1000 {
+				if err := gb.Autohangupdelay(*autoDialDelay); err != nil {
+					log.Println(err)
+				}
+				if err := gb.Autohangup(); err != nil {
+					log.Println(err)
+				}
+			} else {
+				log.Println("auto_hangup_delay is too short")
+			}
+		}
 
 		if *autoDial != "" {
 			if *autoDialDelay >= 1000 {
