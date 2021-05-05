@@ -282,7 +282,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 
 func (b *Baresip) keepActive() {
 	for {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		b.Exec("listcalls", "", "keep_active_ping")
 	}
 }
@@ -341,9 +341,17 @@ func (b *Baresip) setup() error {
 	mp := C.CString(b.configPath)
 	defer C.free(unsafe.Pointer(mp))
 
-	ct := C.CString("ctrl_tcp")
-	defer C.free(unsafe.Pointer(ct))
-	C.module_load(mp, ct)
+	ma := C.CString("autotest")
+	defer C.free(unsafe.Pointer(ma))
+	C.module_load(mp, ma)
+
+	mc := C.CString("ctrl_tcp")
+	defer C.free(unsafe.Pointer(mc))
+	C.module_load(mp, mc)
+
+	mh := C.CString("httpd")
+	defer C.free(unsafe.Pointer(mh))
+	C.module_load(mp, mh)
 
 	C.set_net_change_handler()
 	C.set_ua_exit_handler()

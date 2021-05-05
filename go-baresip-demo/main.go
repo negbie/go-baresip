@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"strings"
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
@@ -17,7 +16,8 @@ func main() {
 
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
-	repeatDialDuration := flag.String("repeat_dial_duration", "0s", "Repeats dial after this duration if it's more than 5s")
+	autoDial := flag.String("auto_dial", "", "Auto dial SIP URI if it's not empty")
+	autoDialDelay := flag.Int("auto_dial_delay", 5000, "Set delay before auto dial [ms]")
 	debug := flag.Bool("debug", false, "Debug mode")
 	flag.Parse()
 
@@ -63,17 +63,19 @@ func main() {
 	}()
 
 	go func() {
-		if *dial != "" && *repeatDialDuration != "" && !strings.HasPrefix(*repeatDialDuration, "0") {
-			if d, err := time.ParseDuration(*repeatDialDuration); err == nil && d > time.Duration(5*time.Second) {
-				ticker := time.NewTicker(d)
-				defer ticker.Stop()
-				for ; true; <-ticker.C {
-					if err := gb.Dial(*dial); err != nil {
-						log.Println(err)
-					}
+		// Give baresip some time to init and register ua
+		time.Sleep(1 * time.Second)
+
+		if *autoDial != "" {
+			if *autoDialDelay >= 1000 {
+				if err := gb.Autodialdelay(*autoDialDelay); err != nil {
+					log.Println(err)
+				}
+				if err := gb.Autodial(*autoDial); err != nil {
+					log.Println(err)
 				}
 			} else {
-				log.Println("repeat_dial_duration must be higher than 5s and lower than 1d")
+				log.Println("auto_dial_delay is too short")
 			}
 		} else if *dial != "" {
 			if err := gb.Dial(*dial); err != nil {

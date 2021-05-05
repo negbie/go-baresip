@@ -1,5 +1,7 @@
 package gobaresip
 
+import "strconv"
+
 /*
 /accept             a        Accept incoming call
 /acceptdir ..                Accept incoming call with audio and videodirection
@@ -103,6 +105,24 @@ func (b *Baresip) Contact_prev(s ...string) error {
 	c := "contact_prev"
 	if len(s) > 0 {
 		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+	}
+	return b.Exec(c, "", "command_"+c)
+}
+
+// Autodial will autodial number
+func (b *Baresip) Autodial(s ...string) error {
+	c := "autodial dial"
+	if len(s) > 0 {
+		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+	}
+	return b.Exec(c, "", "command_"+c)
+}
+
+// Autodialdelay will set delay before auto dial [ms]
+func (b *Baresip) Autodialdelay(n ...int) error {
+	c := "autodialdelay"
+	if len(n) > 0 {
+		return b.Exec(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
 	}
 	return b.Exec(c, "", "command_"+c)
 }
