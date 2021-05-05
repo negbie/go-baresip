@@ -14,11 +14,10 @@ mkdir rem
 mkdir baresip
 cd git
 
-my_base_modules="autotest debug_cmd httpd menu ice stun turn uuid account contact"
-my_audio_modules="aufile auloop"
+my_base_modules="autotest ctrl_tcp debug_cmd echo httpd menu ice stun turn uuid account contact"
+my_audio_modules="aubridge aufile auloop"
 my_codec_modules="g711"
 #my_ui_modules="stdio cons"
-my_ctrl_modules="ctrl_tcp"
 my_tls_modules="srtp"
 
 git clone https://github.com/baresip/re.git
@@ -35,9 +34,9 @@ sed -i 's/$(BARESIP_MOD_MK)/mk\/mod.mk/g' baresip/modules/autotest/module.mk
 sed -i '/auloop/a MODULES   += autotest' baresip/mk/modules.mk
 
 cd baresip
-  
+    
 make LIBRE_SO=../re LIBREM_PATH=../rem STATIC=1 libbaresip.a \
-    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_ui_modules $my_ctrl_modules $my_tls_modules"
+    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_ui_modules $my_tls_modules"
 
 cp libbaresip.a ../../baresip; cd ..
 mv re/include ../re

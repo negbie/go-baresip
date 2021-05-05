@@ -148,7 +148,7 @@ func (b *Baresip) connectCtrl() error {
 	b.conn, err = net.Dial("tcp", b.ctrlAddr)
 	if err != nil {
 		atomic.StoreUint32(&b.connAlive, 0)
-		return err
+		return fmt.Errorf("%v: please make sure ctrl_tcp is enabled", err)
 	}
 
 	b.ctrlStream = bufio.NewScanner(b.conn)
@@ -337,21 +337,6 @@ func (b *Baresip) setup() error {
 		log.Printf("baresip ua init failed with error code %d\n", err)
 		return b.end(err)
 	}
-
-	mp := C.CString(b.configPath)
-	defer C.free(unsafe.Pointer(mp))
-
-	ma := C.CString("autotest")
-	defer C.free(unsafe.Pointer(ma))
-	C.module_load(mp, ma)
-
-	mc := C.CString("ctrl_tcp")
-	defer C.free(unsafe.Pointer(mc))
-	C.module_load(mp, mc)
-
-	mh := C.CString("httpd")
-	defer C.free(unsafe.Pointer(mh))
-	C.module_load(mp, mh)
 
 	C.set_net_change_handler()
 	C.set_ua_exit_handler()

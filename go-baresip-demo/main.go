@@ -70,7 +70,7 @@ func main() {
 
 		if *autoHangup {
 			if *autoHangupDelay >= 1000 {
-				if err := gb.Autohangupdelay(*autoDialDelay); err != nil {
+				if err := gb.Autohangupdelay(*autoHangupDelay); err != nil {
 					log.Println(err)
 				}
 				if err := gb.Autohangup(); err != nil {
