@@ -137,6 +137,7 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
+	// Simple solution for this https://github.com/baresip/baresip/issues/584
 	go b.keepActive()
 
 	return b, nil
@@ -375,10 +376,10 @@ func (b *Baresip) setup() error {
 	return nil
 }
 
+// Run a baresip instance
 func (b *Baresip) Run() error {
 	go b.read()
 	err := b.end(C.mainLoop())
-
 	if err.Error() == "0" {
 		return nil
 	}
