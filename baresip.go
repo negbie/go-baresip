@@ -63,7 +63,6 @@ int mainLoop(){
 */
 import "C"
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -115,7 +114,7 @@ type Baresip struct {
 	connAlive    uint32
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
-	ctrlStream   *bufio.Scanner
+	ctrlStream   *Reader
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -151,44 +150,23 @@ func (b *Baresip) connectCtrl() error {
 		return fmt.Errorf("%v: please make sure ctrl_tcp is enabled", err)
 	}
 
-	b.ctrlStream = bufio.NewScanner(b.conn)
-	b.ctrlStream.Split(eventSplitFunc)
+	b.ctrlStream = NewReader(b.conn)
 
 	atomic.StoreUint32(&b.connAlive, 1)
 	return nil
 }
 
-func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-
-	if i := bytes.Index(data, []byte("},")); i != -1 {
-		if j := bytes.Index(data, []byte(":{")); j != -1 {
-			return i + 1, data[j+1 : i+1], nil
-		}
-	}
-
-	if atEOF {
-		return len(data), data, nil
-	}
-
-	return
-}
-
 func (b *Baresip) read() {
 	for {
-		ok := b.ctrlStream.Scan()
-		if !ok {
-			log.Printf("stop ctrlStream\n")
-			break
+		msg, err := b.ctrlStream.ReadNetstring()
+		if err != nil {
+			log.Println(err)
+			return
 		}
 
 		if atomic.LoadUint32(&b.connAlive) == 0 {
 			return
 		}
-
-		msg := b.ctrlStream.Bytes()
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
 			var e EventMsg
@@ -213,9 +191,6 @@ func (b *Baresip) read() {
 		}
 	}
 
-	if b.ctrlStream.Err() != nil {
-		log.Printf("scanner error: %s\n", b.ctrlStream.Err())
-	}
 }
 
 func cmd(command, params, token string) *CommandMsg {
@@ -252,22 +227,6 @@ func (b *Baresip) Close() {
 	}
 	close(b.responseChan)
 	close(b.eventChan)
-}
-
-func (b *Baresip) GetEvent(get func(e EventMsg)) {
-	go func() {
-		for {
-			get(<-b.eventChan)
-		}
-	}()
-}
-
-func (b *Baresip) GetResponse(get func(r ResponseMsg)) {
-	go func() {
-		for {
-			get(<-b.responseChan)
-		}
-	}()
 }
 
 // GetEventChan returns the receive-only EventMsg channel for reading data.
