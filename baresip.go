@@ -179,7 +179,7 @@ func (b *Baresip) read() {
 	for {
 		ok := b.ctrlStream.Scan()
 		if !ok {
-			log.Printf("scanner end\n")
+			log.Printf("stop ctrlStream\n")
 			break
 		}
 
@@ -282,9 +282,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 func (b *Baresip) keepActive() {
 	for {
 		time.Sleep(200 * time.Millisecond)
-		if err := b.Exec("listcalls", "", "keep_active_ping"); err != nil {
-			log.Println(err)
-		}
+		b.Exec("listcalls", "", "keep_active_ping")
 	}
 }
 
@@ -379,7 +377,12 @@ func (b *Baresip) setup() error {
 
 func (b *Baresip) Run() error {
 	go b.read()
-	return b.end(C.mainLoop())
+	err := b.end(C.mainLoop())
+
+	if err.Error() == "0" {
+		return nil
+	}
+	return err
 }
 
 func (b *Baresip) end(err C.int) error {

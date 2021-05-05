@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -28,7 +27,7 @@ func main() {
 		return
 	}
 
-	loki, lerr := NewLokiClient(*lokiServer, 4, 2)
+	loki, lerr := NewLokiClient(*lokiServer, 10, 4)
 	if lerr != nil {
 		log.Println(lerr)
 	}
@@ -41,13 +40,19 @@ func main() {
 	go func() {
 		for {
 			select {
-			case e := <-eChan:
+			case e, ok := <-eChan:
+				if !ok {
+					continue
+				}
 				if lerr == nil {
 					loki.Send(staticlokiLabel, e.Raw)
 				} else {
 					log.Println(e)
 				}
-			case r := <-rChan:
+			case r, ok := <-rChan:
+				if !ok {
+					continue
+				}
 				if lerr == nil {
 					loki.Send(staticlokiLabel, r.Raw)
 				} else {
@@ -63,7 +68,6 @@ func main() {
 				ticker := time.NewTicker(d)
 				defer ticker.Stop()
 				for ; true; <-ticker.C {
-					fmt.Println(time.Now())
 					if err := gb.Dial(*dial); err != nil {
 						log.Println(err)
 					}
@@ -78,6 +82,9 @@ func main() {
 		}
 	}()
 
-	gb.Run()
+	err = gb.Run()
+	if err != nil {
+		log.Println(err)
+	}
 	defer gb.Close()
 }
