@@ -115,6 +115,7 @@ type Baresip struct {
 	connAlive    uint32
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
+	ctrlStream   *bufio.Scanner
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -132,33 +133,28 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		b.userAgent = "go-baresip"
 	}
 
-	go b.connectCtrl()
+	if err := b.setup(); err != nil {
+		return nil, err
+	}
+
+	go b.keepActive()
 
 	return b, nil
 }
 
-func (b *Baresip) connectCtrl() {
+func (b *Baresip) connectCtrl() error {
 	var err error
-
-	for i := 0; i < 10; i++ {
-		b.conn, err = net.Dial("tcp", b.ctrlAddr)
-		if err != nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-		log.Printf("Connection to %s established\n", b.ctrlAddr)
-		break
-	}
-
-	if b.conn == nil {
+	b.conn, err = net.Dial("tcp", b.ctrlAddr)
+	if err != nil {
 		atomic.StoreUint32(&b.connAlive, 0)
-		log.Printf("can't connect to %s, exit!\n", b.ctrlAddr)
-		return
+		return err
 	}
+
+	b.ctrlStream = bufio.NewScanner(b.conn)
+	b.ctrlStream.Split(eventSplitFunc)
 
 	atomic.StoreUint32(&b.connAlive, 1)
-
-	b.read()
+	return nil
 }
 
 func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -180,12 +176,8 @@ func eventSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err err
 }
 
 func (b *Baresip) read() {
-	defer b.conn.Close()
-	defer atomic.StoreUint32(&b.connAlive, 0)
-	scanner := bufio.NewScanner(b.conn)
-	scanner.Split(eventSplitFunc)
 	for {
-		ok := scanner.Scan()
+		ok := b.ctrlStream.Scan()
 		if !ok {
 			log.Printf("scanner end\n")
 			break
@@ -195,7 +187,7 @@ func (b *Baresip) read() {
 			return
 		}
 
-		msg := scanner.Bytes()
+		msg := b.ctrlStream.Bytes()
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
 			var e EventMsg
@@ -206,6 +198,10 @@ func (b *Baresip) read() {
 			}
 			b.eventChan <- e
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
+			if bytes.Contains(msg, []byte("keep_active_ping")) {
+				continue
+			}
+
 			var r ResponseMsg
 			r.Raw = string(msg)
 			err := json.Unmarshal(bytes.Replace(msg, []byte("\\n"), []byte(""), -1), &r)
@@ -216,8 +212,8 @@ func (b *Baresip) read() {
 		}
 	}
 
-	if scanner.Err() != nil {
-		log.Printf("scanner error: %s\n", scanner.Err())
+	if b.ctrlStream.Err() != nil {
+		log.Printf("scanner error: %s\n", b.ctrlStream.Err())
 	}
 }
 
@@ -249,7 +245,10 @@ func (b *Baresip) Exec(command, params, token string) error {
 }
 
 func (b *Baresip) Close() {
-	atomic.StoreUint32(&b.connAlive, 1)
+	atomic.StoreUint32(&b.connAlive, 0)
+	if b.conn != nil {
+		b.conn.Close()
+	}
 	close(b.responseChan)
 	close(b.eventChan)
 }
@@ -280,8 +279,17 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 	return b.responseChan
 }
 
-// Run a baresip instance
-func (b *Baresip) Run() error {
+func (b *Baresip) keepActive() {
+	for {
+		time.Sleep(200 * time.Millisecond)
+		if err := b.Exec("listcalls", "", "keep_active_ping"); err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+// setup a baresip instance
+func (b *Baresip) setup() error {
 
 	ua := C.CString(b.userAgent)
 	defer C.free(unsafe.Pointer(ua))
@@ -331,6 +339,13 @@ func (b *Baresip) Run() error {
 		return b.end(err)
 	}
 
+	mp := C.CString(b.configPath)
+	defer C.free(unsafe.Pointer(mp))
+
+	ct := C.CString("ctrl_tcp")
+	defer C.free(unsafe.Pointer(ct))
+	C.module_load(mp, ct)
+
 	C.set_net_change_handler()
 	C.set_ua_exit_handler()
 
@@ -339,10 +354,6 @@ func (b *Baresip) Run() error {
 		log.Printf("baresip load modules failed with error code %d\n", err)
 		return b.end(err)
 	}
-
-	ct := C.CString("ctrl_tcp")
-	defer C.free(unsafe.Pointer(ct))
-	C.module_preload(ct)
 
 	if b.debug {
 		C.log_enable_debug(1)
@@ -358,6 +369,16 @@ func (b *Baresip) Run() error {
 		err = C.uag_set_extra_params(ua_eprm)
 	*/
 
+	if err := b.connectCtrl(); err != nil {
+		b.end(1)
+		return err
+	}
+
+	return nil
+}
+
+func (b *Baresip) Run() error {
+	go b.read()
 	return b.end(C.mainLoop())
 }
 

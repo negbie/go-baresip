@@ -66,6 +66,11 @@ func NewLokiClient(url string, maxBatch int, maxWaitSeconds int) (*LokiClient, e
 	client.endpoints.query = "/loki/api/v1/query"
 	client.endpoints.ready = "/ready"
 
+	_, err := http.Get(client.url + client.endpoints.ready)
+	if err != nil {
+		return &client, err
+	}
+
 	client.wg.Add(1)
 	go client.run()
 	return &client, nil
@@ -74,11 +79,13 @@ func NewLokiClient(url string, maxBatch int, maxWaitSeconds int) (*LokiClient, e
 func (client *LokiClient) Close() {
 	close(client.quit)
 	client.wg.Wait()
+	close(client.streams)
 }
 
 func (client *LokiClient) run() {
 	batchCounter := 0
 	maxWait := time.NewTimer(client.maxWaitTime)
+	defer maxWait.Stop()
 
 	defer func() {
 		if batchCounter > 0 {
@@ -95,8 +102,7 @@ func (client *LokiClient) run() {
 		case <-client.quit:
 			return
 		case stream := <-client.streams:
-			client.currentMessage.Streams =
-				append(client.currentMessage.Streams, *stream)
+			client.currentMessage.Streams = append(client.currentMessage.Streams, *stream)
 			batchCounter++
 			if batchCounter == client.maxBatch {
 				err := client.send()
