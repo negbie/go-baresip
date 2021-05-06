@@ -36,15 +36,15 @@ const (
 	dataDelim   byte = ','
 )
 
-type Reader struct {
+type reader struct {
 	r *bufio.Reader
 }
 
-func NewReader(r io.Reader) *Reader {
-	return &Reader{r: bufio.NewReader(r)}
+func newReader(r io.Reader) *reader {
+	return &reader{r: bufio.NewReader(r)}
 }
 
-func (r *Reader) ReadNetstring() ([]byte, error) {
+func (r *reader) readNetstring() ([]byte, error) {
 	length, err := r.r.ReadBytes(lengthDelim)
 	if err != nil {
 		return nil, err
@@ -68,11 +68,11 @@ func (r *Reader) ReadNetstring() ([]byte, error) {
 	return ret, nil
 }
 
-func Decode(in []byte) ([][]byte, error) {
-	rd := NewReader(bytes.NewReader(in))
+func decode(in []byte) ([][]byte, error) {
+	rd := newReader(bytes.NewReader(in))
 	ret := make([][]byte, 0)
 	for {
-		d, err := rd.ReadNetstring()
+		d, err := rd.readNetstring()
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -85,15 +85,15 @@ func Decode(in []byte) ([][]byte, error) {
 	return ret, nil
 }
 
-type Writer struct {
+type writer struct {
 	w io.Writer
 }
 
-func NewWriter(w io.Writer) *Writer {
-	return &Writer{w: w}
+func newWriter(w io.Writer) *writer {
+	return &writer{w: w}
 }
 
-func (w *Writer) WriteNetstring(b []byte) error {
+func (w *writer) writeNetstring(b []byte) error {
 	_, err := w.w.Write([]byte(strconv.Itoa(len(b))))
 	if err != nil {
 		return err
@@ -113,11 +113,11 @@ func (w *Writer) WriteNetstring(b []byte) error {
 	return nil
 }
 
-func Encode(in ...[]byte) ([]byte, error) {
+func encode(in ...[]byte) ([]byte, error) {
 	var buf bytes.Buffer
-	wr := NewWriter(&buf)
+	wr := newWriter(&buf)
 	for _, d := range in {
-		err := wr.WriteNetstring(d)
+		err := wr.writeNetstring(d)
 		if err != nil {
 			return nil, err
 		}

@@ -1,6 +1,11 @@
 package gobaresip
 
-import "strconv"
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"sync/atomic"
+)
 
 /*
   /about                           About box
@@ -59,254 +64,288 @@ import "strconv"
   /vidsrc ..                       Switch video source
 */
 
-// Accept will accept incoming call
-func (b *Baresip) Accept(s ...string) error {
+//CommandMsg struct for ctrl_tcp
+type CommandMsg struct {
+	Command string `json:"command,omitempty"`
+	Params  string `json:"params,omitempty"`
+	Token   string `json:"token,omitempty"`
+}
+
+func buildCommand(command, params, token string) *CommandMsg {
+	return &CommandMsg{
+		Command: command,
+		Params:  params,
+		Token:   token,
+	}
+}
+
+// Command will send a raw baresip command over ctrl_tcp.
+func (b *Baresip) Command(command, params, token string) error {
+	msg, err := json.Marshal(buildCommand(command, params, token))
+	if err != nil {
+		return err
+	}
+
+	if atomic.LoadUint32(&b.connAlive) == 0 {
+		return fmt.Errorf("can't write to closed tcp_ctrl connection")
+	}
+
+	_, err = b.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CommandAccept will accept incoming call
+func (b *Baresip) CommandAccept(s ...string) error {
 	c := "accept"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Acceptdir will accept incoming call with audio and videodirection.
-func (b *Baresip) Acceptdir(s ...string) error {
+// CommandAcceptdir will accept incoming call with audio and videodirection.
+func (b *Baresip) CommandAcceptdir(s ...string) error {
 	c := "acceptdir"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Answermode will set answer mode
-func (b *Baresip) Answermode(s ...string) error {
+// CommandAnswermode will set answer mode
+func (b *Baresip) CommandAnswermode(s ...string) error {
 	c := "answermode"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Auplay will switch audio player
-func (b *Baresip) Auplay(s ...string) error {
+// CommandAuplay will switch audio player
+func (b *Baresip) CommandAuplay(s ...string) error {
 	c := "auplay"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Ausrc will switch audio source
-func (b *Baresip) Ausrc(s ...string) error {
+// CommandAusrc will switch audio source
+func (b *Baresip) CommandAusrc(s ...string) error {
 	c := "ausrc"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Callstat will show call status
-func (b *Baresip) Callstat(s ...string) error {
+// CommandCallstat will show call status
+func (b *Baresip) CommandCallstat(s ...string) error {
 	c := "callstat"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Contact_next will set next contact
-func (b *Baresip) Contact_next(s ...string) error {
+// CommandContact_next will set next contact
+func (b *Baresip) CommandContact_next(s ...string) error {
 	c := "contact_next"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Contact_prev will set previous contact
-func (b *Baresip) Contact_prev(s ...string) error {
+// CommandContact_prev will set previous contact
+func (b *Baresip) CommandContact_prev(s ...string) error {
 	c := "contact_prev"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Autodial will dial number automatically
-func (b *Baresip) Autodial(s ...string) error {
+// CommandAutodial will dial number automatically
+func (b *Baresip) CommandAutodial(s ...string) error {
 	c := "autodial dial"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Autodialdelay will set delay before auto dial [ms]
-func (b *Baresip) Autodialdelay(n ...int) error {
+// CommandAutodialdelay will set delay before auto dial [ms]
+func (b *Baresip) CommandAutodialdelay(n ...int) error {
 	c := "autodialdelay"
 	if len(n) > 0 {
-		return b.Exec(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
+		return b.Command(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Dial will dial number
-func (b *Baresip) Dial(s ...string) error {
+// CommandDial will dial number
+func (b *Baresip) CommandDial(s ...string) error {
 	c := "dial"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Dialcontact will dial current contact
-func (b *Baresip) Dialcontact(s ...string) error {
+// CommandDialcontact will dial current contact
+func (b *Baresip) CommandDialcontact(s ...string) error {
 	c := "dialcontact"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Dialdir will dial with audio and videodirection
-func (b *Baresip) Dialdir(s ...string) error {
+// CommandDialdir will dial with audio and videodirection
+func (b *Baresip) CommandDialdir(s ...string) error {
 	c := "dialdir"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Autohangup will hangup call automatically
-func (b *Baresip) Autohangup(s ...string) error {
+// CommandAutohangup will hangup call automatically
+func (b *Baresip) CommandAutohangup(s ...string) error {
 	c := "autohangup"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Autohangupdelay will set delay before hangup [ms]
-func (b *Baresip) Autohangupdelay(n ...int) error {
+// CommandAutohangupdelay will set delay before hangup [ms]
+func (b *Baresip) CommandAutohangupdelay(n ...int) error {
 	c := "autohangupdelay"
 	if len(n) > 0 {
-		return b.Exec(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
+		return b.Command(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Hangup will hangup call
-func (b *Baresip) Hangup(s ...string) error {
+// CommandHangup will hangup call
+func (b *Baresip) CommandHangup(s ...string) error {
 	c := "hangup"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Hangupall will hangup all calls with direction
-func (b *Baresip) Hangupall(s ...string) error {
+// CommandHangupall will hangup all calls with direction
+func (b *Baresip) CommandHangupall(s ...string) error {
 	c := "hangupall"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Insmod will load module
-func (b *Baresip) Insmod(s ...string) error {
+// CommandInsmod will load module
+func (b *Baresip) CommandInsmod(s ...string) error {
 	c := "insmod"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Listcalls will list active calls
-func (b *Baresip) Listcalls(s ...string) error {
+// CommandListcalls will list active calls
+func (b *Baresip) CommandListcalls(s ...string) error {
 	c := "listcalls"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Reginfo will list registration info
-func (b *Baresip) Reginfo(s ...string) error {
+// CommandReginfo will list registration info
+func (b *Baresip) CommandReginfo(s ...string) error {
 	c := "reginfo"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Rmmod will unload module
-func (b *Baresip) Rmmod(s ...string) error {
+// CommandRmmod will unload module
+func (b *Baresip) CommandRmmod(s ...string) error {
 	c := "rmmod"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Setadelay will set answer delay for outgoing call
-func (b *Baresip) Setadelay(s ...string) error {
+// CommandSetadelay will set answer delay for outgoing call
+func (b *Baresip) CommandSetadelay(s ...string) error {
 	c := "setadelay"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Uadel will delete User-Agent
-func (b *Baresip) Uadel(s ...string) error {
+// CommandUadel will delete User-Agent
+func (b *Baresip) CommandUadel(s ...string) error {
 	c := "uadel"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Uadelall will delete all User-Agents
-func (b *Baresip) Uadelall(s ...string) error {
+// CommandUadelall will delete all User-Agents
+func (b *Baresip) CommandUadelall(s ...string) error {
 	c := "uadelall"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Uafind will find User-Agent <aor>
-func (b *Baresip) Uafind(s ...string) error {
+// CommandUafind will find User-Agent <aor>
+func (b *Baresip) CommandUafind(s ...string) error {
 	c := "uafind"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Uanew will create User-Agent
-func (b *Baresip) Uanew(s ...string) error {
+// CommandUanew will create User-Agent
+func (b *Baresip) CommandUanew(s ...string) error {
 	c := "uanew"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Uareg will register <regint> [index]
-func (b *Baresip) Uareg(s ...string) error {
+// CommandUareg will register <regint> [index]
+func (b *Baresip) CommandUareg(s ...string) error {
 	c := "uareg"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }
 
-// Quit will quit baresip
-func (b *Baresip) Quit(s ...string) error {
+// CommandQuit will quit baresip
+func (b *Baresip) CommandQuit(s ...string) error {
 	c := "quit"
 	if len(s) > 0 {
-		return b.Exec(c, s[0], "command_"+c+"_"+s[0])
+		return b.Command(c, s[0], "command_"+c+"_"+s[0])
 	}
-	return b.Exec(c, "", "command_"+c)
+	return b.Command(c, "", "command_"+c)
 }

@@ -50,7 +50,7 @@ func main() {
         // Give baresip some time to init and register ua
         time.Sleep(1 * time.Second)
 
-        if err := gb.Dial("01234"); err != nil {
+        if err := gb.CommandDial("01234"); err != nil {
             log.Println(err)
         }
     }()

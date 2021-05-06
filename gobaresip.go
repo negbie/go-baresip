@@ -73,13 +73,6 @@ import (
 	"unsafe"
 )
 
-//CommandMsg
-type CommandMsg struct {
-	Command string `json:"command,omitempty"`
-	Params  string `json:"params,omitempty"`
-	Token   string `json:"token,omitempty"`
-}
-
 //ResponseMsg
 type ResponseMsg struct {
 	Response bool   `json:"response,omitempty"`
@@ -114,7 +107,7 @@ type Baresip struct {
 	connAlive    uint32
 	responseChan chan ResponseMsg
 	eventChan    chan EventMsg
-	ctrlStream   *Reader
+	ctrlStream   *reader
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -150,7 +143,7 @@ func (b *Baresip) connectCtrl() error {
 		return fmt.Errorf("%v: please make sure ctrl_tcp is enabled", err)
 	}
 
-	b.ctrlStream = NewReader(b.conn)
+	b.ctrlStream = newReader(b.conn)
 
 	atomic.StoreUint32(&b.connAlive, 1)
 	return nil
@@ -158,7 +151,7 @@ func (b *Baresip) connectCtrl() error {
 
 func (b *Baresip) read() {
 	for {
-		msg, err := b.ctrlStream.ReadNetstring()
+		msg, err := b.ctrlStream.readNetstring()
 		if err != nil {
 			log.Println(err)
 			return
@@ -190,34 +183,6 @@ func (b *Baresip) read() {
 			b.responseChan <- r
 		}
 	}
-
-}
-
-func cmd(command, params, token string) *CommandMsg {
-	return &CommandMsg{
-		Command: command,
-		Params:  params,
-		Token:   token,
-	}
-}
-
-// Exec sends a command over ctrl_tcp to baresip.
-func (b *Baresip) Exec(command, params, token string) error {
-	msg, err := json.Marshal(cmd(command, params, token))
-	if err != nil {
-		return err
-	}
-
-	if atomic.LoadUint32(&b.connAlive) == 0 {
-		return fmt.Errorf("can't write to closed tcp_ctrl connection")
-	}
-
-	_, err = b.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b *Baresip) Close() {
@@ -242,7 +207,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 func (b *Baresip) keepActive() {
 	for {
 		time.Sleep(500 * time.Millisecond)
-		b.Exec("listcalls", "", "keep_active_ping")
+		b.Command("listcalls", "", "keep_active_ping")
 	}
 }
 
