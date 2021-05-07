@@ -26,8 +26,8 @@ audio_path		./sounds
 #audio_source		alsa,default
 #audio_alert		alsa,default
 #audio_source		aufile,./sounds/monorobo.wav
-audio_source		aubridge,dummy
-audio_player		aubridge,dummy
+audio_source		aubridge,pseudo0
+audio_player		aubridge,pseudo0
 #ausrc_srate		48000
 #auplay_srate		48000
 #ausrc_channels		0
@@ -172,7 +172,7 @@ module_app		autotest.so
 #module_app		b2bua.so
 module_app		contact.so
 #module_app		debug_cmd.so
-module_app		echo.so
+#module_app		echo.so
 #module_app		gtk.so
 module_app		menu.so
 #module_app		mwi.so
