@@ -75,11 +75,9 @@ import (
 	"unsafe"
 )
 
-var errBuf [512]C.char
-
 func init() {
-	lock.Lock()
-	defer lock.Unlock()
+	//lock.Lock()
+	//defer lock.Unlock()
 
 	C.espeak_ng_InitializePath(nil)
 
@@ -104,6 +102,8 @@ func init() {
 }
 
 func toErr(status C.espeak_ng_STATUS) error {
+	var errBuf [512]C.char
+
 	if status == C.ENS_OK {
 		return nil
 	}
@@ -210,7 +210,7 @@ func setVoice(name, language string, gender Gender, age, variant uint8) error {
 	return toErr(C.espeak_ng_SetVoiceByProperties(&voice))
 }
 
-var synthCtx *Context
+var synthCtx *Espeak
 
 //export synthCallback
 func synthCallback(wav *C.short, numsamples C.int, events *C.espeak_EVENT) C.int {
@@ -266,8 +266,8 @@ func toEvent(event *C.espeak_EVENT) *SynthEvent {
 	return &synthEvent
 }
 
-func synthesize(text string, ctx *Context) error {
-	synthCtx = ctx
+func synthesize(text string, e *Espeak) error {
+	synthCtx = e
 	defer func() {
 		synthCtx = nil
 	}()
