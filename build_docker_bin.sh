@@ -6,7 +6,7 @@ set -ex
 
 apt update
 command -v go version >/dev/null 2>&1 || { apt install -y golang; }
-apt install -y make gcc zlib1g-dev libssl-dev openssl git wget
+apt install -y autoconf automake libtool pkg-config make gcc zlib1g-dev libssl-dev openssl git wget
 
 cd /mnt
 rm -rf libbaresip
@@ -19,7 +19,7 @@ mkdir rem
 mkdir baresip
 cd git
 
-my_base_modules="autotest ctrl_tcp debug_cmd echo httpd menu ice stun turn uuid account contact"
+my_base_modules="autotest ctrl_tcp debug_cmd httpd menu ice stun turn uuid account contact"
 my_audio_modules="aubridge aufile auloop"
 my_codec_modules="g711"
 #my_ui_modules="stdio cons"
@@ -48,5 +48,20 @@ mv re/include ../re
 mv rem/include ../rem
 mv baresip/include ../baresip
 cd ..; rm -rf git; cd ..
+
+cd espeak
+if [ ! -d "espeak-ng" ]; then
+    git clone https://github.com/espeak-ng/espeak-ng.git
+fi
+cd espeak-ng
+./autogen.sh
+./configure --without-async --without-mbrola --without-sonic --without-speechplayer
+make
+cp src/.libs/libespeak-ng.a ../
+cp src/include/espeak-ng/speak_lib.h ../
+make clean
+cd ..
+rm -rf espeak-ng
+cd ..
 
 go build -ldflags "-w"  -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go

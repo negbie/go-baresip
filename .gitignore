@@ -5,4 +5,4 @@ uuid
 speaker.wav
 go-baresip-demo/go-baresip-demo
 libbaresip/git
-espeak-ng
+espeak/espeak-ng
