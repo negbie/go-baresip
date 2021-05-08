@@ -68,6 +68,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -94,6 +95,7 @@ type EventMsg struct {
 	ID              string `json:"id,omitempty"`
 	RemoteAudioDir  string `json:"remoteaudiodir,omitempty"`
 	Param           string `json:"param,omitempty"`
+	Level           string
 	Raw             string
 }
 
@@ -168,6 +170,22 @@ func (b *Baresip) read() {
 			if err != nil {
 				log.Println(err, string(msg))
 			}
+
+			cc := e.Type == "CALL_CLOSED"
+			e.Level = "info"
+
+			if cc && e.ID == "" {
+				e.Level = "warning"
+			} else if cc && strings.HasPrefix(e.Param, "4") {
+				e.Level = "warning"
+			} else if cc && strings.HasPrefix(e.Param, "5") {
+				e.Level = "error"
+			} else if cc && strings.HasPrefix(e.Param, "6") {
+				e.Level = "error"
+			} else if strings.Contains(e.Type, "FAIL") || strings.Contains(e.Type, "ERROR") {
+				e.Level = "warning"
+			}
+
 			b.eventChan <- e
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
 			if bytes.Contains(msg, []byte("keep_active_ping")) {
