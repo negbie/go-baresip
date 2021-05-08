@@ -4,11 +4,11 @@
 package espeak
 
 /*
-#cgo linux LDFLAGS: ${SRCDIR}/libespeak.a -lm
+#cgo linux LDFLAGS: ${SRCDIR}/libespeak-ng.a -lm
 
 #include <stdlib.h>
 #include <string.h>
-#include <espeak.h>
+#include <speak_lib.h>
 
 void* user_data;
 unsigned int *unique_identifier;

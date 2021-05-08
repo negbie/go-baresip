@@ -49,5 +49,17 @@ cp libbaresip.a ../../baresip; cd ..
 cp -R re/include ../re
 cp -R rem/include ../rem
 cp -R baresip/include ../baresip
-cd ..
+cd ../..
 
+cd espeak
+if [ ! -d "espeak-ng" ]; then
+    git clone https://github.com/espeak-ng/espeak-ng.git
+fi
+cd espeak-ng
+./autogen.sh
+./configure --without-async --without-mbrola --without-sonic --without-speechplayer
+make
+cp src/.libs/libespeak-ng.a ../
+cp src/include/espeak-ng/speak_lib.h ../
+make clean
+cd ..
