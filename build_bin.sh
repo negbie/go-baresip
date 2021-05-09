@@ -57,7 +57,7 @@ if [ ! -d "espeak-ng" ]; then
 fi
 cd espeak-ng
 ./autogen.sh
-./configure --without-async --without-mbrola --without-sonic --without-speechplayer
+./configure --without-async --without-mbrola --without-sonic --without-speechplayer --without-klatt
 make
 cp src/.libs/libespeak-ng.a ../
 cp src/include/espeak-ng/speak_lib.h ../
