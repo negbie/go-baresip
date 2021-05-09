@@ -94,8 +94,7 @@ static int EspeakSynth(const char *text, unsigned int position, espeak_POSITION_
 {
 	unsigned int size_t;
 	size_t = strlen(text)+1;
-	return (int) espeak_Synth( text, size_t, position, position_type, end_position, flags,
-    unique_identifier, user_data );
+	return (int) espeak_Synth( text, size_t, position, position_type, end_position, flags, unique_identifier, user_data );
 }
 */
 import "C"
@@ -132,10 +131,10 @@ const (
 	FLAG_KEEP_NAMEDATA EspeakSynthFlag = 0x2000
 )
 
-func Initialize(path string, options int) int {
-	cpath := C.CString(path)
+func Initialize(ngDataPath string) int {
+	cpath := C.CString(ngDataPath)
 	defer C.free(unsafe.Pointer(cpath))
-	C.wavsamplerate = C.espeak_Initialize(C.espeak_AUDIO_OUTPUT(AUDIO_OUTPUT_SYNCHRONOUS), C.int(200), cpath, C.int(options))
+	C.wavsamplerate = C.espeak_Initialize(C.espeak_AUDIO_OUTPUT(AUDIO_OUTPUT_SYNCHRONOUS), C.int(200), cpath, C.int(0))
 	return int(C.wavsamplerate)
 }
 
@@ -163,8 +162,8 @@ func SynthFlags(text string, position uint, positionType EspeakPositionType, end
 	return int(C.EspeakSynth(ctext, C.uint(position), C.espeak_POSITION_TYPE(positionType), C.uint(endPosition), C.uint(flags)))
 }
 
-func Save(inputText, outputWav string) int {
-	outfile := checkWav(outputWav)
+func Save(textInput, wavOutput string) int {
+	outfile := checkWav(wavOutput)
 	if _, err := os.Stat(filepath.Dir(outfile)); os.IsNotExist(err) {
 		return -1
 	}
@@ -174,10 +173,11 @@ func Save(inputText, outputWav string) int {
 
 	C.espeak_SetSynthCallback((*C.t_espeak_callback)(C.callback))
 
-	ctext := C.CString(inputText)
+	ctext := C.CString(textInput)
 	defer C.free(unsafe.Pointer(ctext))
+
 	if x := int(C.EspeakSynth(ctext, C.uint(0), C.espeak_POSITION_TYPE(0), C.uint(0), C.uint(1))); x != 0 {
-		return -1
+		return x
 	}
 
 	return int(C.espeak_Synchronize())

@@ -182,7 +182,9 @@ func (b *Baresip) read() {
 				e.Level = "error"
 			} else if cc && strings.HasPrefix(e.Param, "6") {
 				e.Level = "error"
-			} else if strings.Contains(e.Type, "FAIL") || strings.Contains(e.Type, "ERROR") {
+			} else if cc && strings.Contains(e.Param, "error") {
+				e.Level = "error"
+			} else if strings.Contains(e.Type, "FAIL") {
 				e.Level = "warning"
 			}
 
@@ -225,7 +227,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 func (b *Baresip) keepActive() {
 	for {
 		time.Sleep(500 * time.Millisecond)
-		b.Command("listcalls", "", "keep_active_ping")
+		b.Cmd("listcalls", "", "keep_active_ping")
 	}
 }
 

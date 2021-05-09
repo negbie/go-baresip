@@ -80,14 +80,14 @@ func buildCommand(command, params, token string) *CommandMsg {
 }
 
 // Command will send a raw baresip command over ctrl_tcp.
-func (b *Baresip) Command(command, params, token string) error {
+func (b *Baresip) Cmd(command, params, token string) error {
 	msg, err := json.Marshal(buildCommand(command, params, token))
 	if err != nil {
 		return err
 	}
 
 	if atomic.LoadUint32(&b.connAlive) == 0 {
-		return fmt.Errorf("can't write to closed tcp_ctrl connection")
+		return fmt.Errorf("can't write command to closed tcp_ctrl connection")
 	}
 
 	_, err = b.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
@@ -99,253 +99,169 @@ func (b *Baresip) Command(command, params, token string) error {
 }
 
 // CommandAccept will accept incoming call
-func (b *Baresip) CommandAccept(s ...string) error {
+func (b *Baresip) CmdAccept() error {
 	c := "accept"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandAcceptdir will accept incoming call with audio and videodirection.
-func (b *Baresip) CommandAcceptdir(s ...string) error {
+func (b *Baresip) CmdAcceptdir(s string) error {
 	c := "acceptdir"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandAnswermode will set answer mode
-func (b *Baresip) CommandAnswermode(s ...string) error {
+func (b *Baresip) CmdAnswermode(s string) error {
 	c := "answermode"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandAuplay will switch audio player
-func (b *Baresip) CommandAuplay(s ...string) error {
+func (b *Baresip) CmdAuplay(s string) error {
 	c := "auplay"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandAusrc will switch audio source
-func (b *Baresip) CommandAusrc(s ...string) error {
+func (b *Baresip) CmdAusrc(s string) error {
 	c := "ausrc"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandCallstat will show call status
-func (b *Baresip) CommandCallstat(s ...string) error {
+func (b *Baresip) CmdCallstat() error {
 	c := "callstat"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandContact_next will set next contact
-func (b *Baresip) CommandContact_next(s ...string) error {
+func (b *Baresip) CmdContact_next() error {
 	c := "contact_next"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandContact_prev will set previous contact
-func (b *Baresip) CommandContact_prev(s ...string) error {
+func (b *Baresip) CmdContact_prev() error {
 	c := "contact_prev"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandAutodial will dial number automatically
-func (b *Baresip) CommandAutodial(s ...string) error {
+func (b *Baresip) CmdAutodial(s string) error {
 	c := "autodial dial"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandAutodialdelay will set delay before auto dial [ms]
-func (b *Baresip) CommandAutodialdelay(n ...int) error {
+func (b *Baresip) CmdAutodialdelay(n int) error {
 	c := "autodialdelay"
-	if len(n) > 0 {
-		return b.Command(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
 // CommandDial will dial number
-func (b *Baresip) CommandDial(s ...string) error {
+func (b *Baresip) CmdDial(s string) error {
 	c := "dial"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandDialcontact will dial current contact
-func (b *Baresip) CommandDialcontact(s ...string) error {
+func (b *Baresip) CmdDialcontact() error {
 	c := "dialcontact"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandDialdir will dial with audio and videodirection
-func (b *Baresip) CommandDialdir(s ...string) error {
+func (b *Baresip) CmdDialdir(s string) error {
 	c := "dialdir"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandAutohangup will hangup call automatically
-func (b *Baresip) CommandAutohangup(s ...string) error {
+func (b *Baresip) CmdAutohangup() error {
 	c := "autohangup"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "hangup", "command_"+c)
 }
 
 // CommandAutohangupdelay will set delay before hangup [ms]
-func (b *Baresip) CommandAutohangupdelay(n ...int) error {
+func (b *Baresip) CmdAutohangupdelay(n int) error {
 	c := "autohangupdelay"
-	if len(n) > 0 {
-		return b.Command(c, strconv.Itoa(n[0]), "command_"+c+"_"+strconv.Itoa(n[0]))
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
 // CommandHangup will hangup call
-func (b *Baresip) CommandHangup(s ...string) error {
+func (b *Baresip) CmdHangup() error {
 	c := "hangup"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandHangupall will hangup all calls with direction
-func (b *Baresip) CommandHangupall(s ...string) error {
+func (b *Baresip) CmdHangupall(s string) error {
 	c := "hangupall"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandInsmod will load module
-func (b *Baresip) CommandInsmod(s ...string) error {
+func (b *Baresip) CmdInsmod(s string) error {
 	c := "insmod"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandListcalls will list active calls
-func (b *Baresip) CommandListcalls(s ...string) error {
+func (b *Baresip) CmdListcalls() error {
 	c := "listcalls"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandReginfo will list registration info
-func (b *Baresip) CommandReginfo(s ...string) error {
+func (b *Baresip) CmdReginfo() error {
 	c := "reginfo"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandRmmod will unload module
-func (b *Baresip) CommandRmmod(s ...string) error {
+func (b *Baresip) CmdRmmod(s string) error {
 	c := "rmmod"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandSetadelay will set answer delay for outgoing call
-func (b *Baresip) CommandSetadelay(s ...string) error {
+func (b *Baresip) CmdSetadelay(n int) error {
 	c := "setadelay"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
 // CommandUadel will delete User-Agent
-func (b *Baresip) CommandUadel(s ...string) error {
+func (b *Baresip) CmdUadel(s string) error {
 	c := "uadel"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandUadelall will delete all User-Agents
-func (b *Baresip) CommandUadelall(s ...string) error {
+func (b *Baresip) CmdUadelall() error {
 	c := "uadelall"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }
 
 // CommandUafind will find User-Agent <aor>
-func (b *Baresip) CommandUafind(s ...string) error {
+func (b *Baresip) CmdUafind(s string) error {
 	c := "uafind"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandUanew will create User-Agent
-func (b *Baresip) CommandUanew(s ...string) error {
+func (b *Baresip) CmdUanew(s string) error {
 	c := "uanew"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandUareg will register <regint> [index]
-func (b *Baresip) CommandUareg(s ...string) error {
+func (b *Baresip) CmdUareg(s string) error {
 	c := "uareg"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
 // CommandQuit will quit baresip
-func (b *Baresip) CommandQuit(s ...string) error {
+func (b *Baresip) CmdQuit() error {
 	c := "quit"
-	if len(s) > 0 {
-		return b.Command(c, s[0], "command_"+c+"_"+s[0])
-	}
-	return b.Command(c, "", "command_"+c)
+	return b.Cmd(c, "", "command_"+c)
 }

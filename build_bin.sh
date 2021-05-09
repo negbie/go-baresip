@@ -12,7 +12,7 @@ mkdir -p rem
 mkdir -p baresip
 cd git
 
-my_base_modules="autotest ctrl_tcp debug_cmd httpd menu ice stun turn uuid account contact"
+my_base_modules="account contact autotest ctrl_tcp debug_cmd httpd menu ice stun turn uuid serreg"
 my_audio_modules="aubridge aufile auloop"
 my_codec_modules="g711"
 #my_ui_modules="stdio cons"

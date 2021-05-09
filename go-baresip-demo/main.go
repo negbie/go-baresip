@@ -70,10 +70,10 @@ func main() {
 
 		if *autoHangup {
 			if *autoHangupDelay >= 1000 {
-				if err := gb.CommandAutohangupdelay(*autoHangupDelay); err != nil {
+				if err := gb.CmdAutohangupdelay(*autoHangupDelay); err != nil {
 					log.Println(err)
 				}
-				if err := gb.CommandAutohangup(); err != nil {
+				if err := gb.CmdAutohangup(); err != nil {
 					log.Println(err)
 				}
 			} else {
@@ -83,17 +83,17 @@ func main() {
 
 		if *autoDial != "" {
 			if *autoDialDelay >= 1000 {
-				if err := gb.CommandAutodialdelay(*autoDialDelay); err != nil {
+				if err := gb.CmdAutodialdelay(*autoDialDelay); err != nil {
 					log.Println(err)
 				}
-				if err := gb.CommandAutodial(*autoDial); err != nil {
+				if err := gb.CmdAutodial(*autoDial); err != nil {
 					log.Println(err)
 				}
 			} else {
 				log.Println("auto_dial_delay is too short")
 			}
 		} else if *dial != "" {
-			if err := gb.CommandDial(*dial); err != nil {
+			if err := gb.CmdDial(*dial); err != nil {
 				log.Println(err)
 			}
 		}
