@@ -19,10 +19,9 @@ mkdir rem
 mkdir baresip
 cd git
 
-my_base_modules="account contact autotest ctrl_tcp debug_cmd httpd menu ice stun turn uuid serreg"
+my_base_modules="account contact autotest cons ctrl_tcp debug_cmd httpd menu ice stun turn serreg uuid stdio"
 my_audio_modules="aubridge aufile auloop"
 my_codec_modules="g711"
-#my_ui_modules="stdio cons"
 my_tls_modules="srtp"
 
 git clone https://github.com/baresip/re.git
@@ -41,7 +40,7 @@ sed -i '/auloop/a MODULES   += autotest' baresip/mk/modules.mk
 cd baresip
     
 make LIBRE_SO=../re LIBREM_PATH=../rem STATIC=1 libbaresip.a \
-    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_ui_modules $my_tls_modules"
+    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_tls_modules"
 
 cp libbaresip.a ../../baresip; cd ..
 mv re/include ../re
@@ -55,7 +54,7 @@ if [ ! -d "espeak-ng" ]; then
 fi
 cd espeak-ng
 ./autogen.sh
-./configure --without-async --without-mbrola --without-sonic --without-speechplayer --without-klatt
+./configure --without-async --without-mbrola --without-sonic --without-speechplayer
 make
 cp src/.libs/libespeak-ng.a ../
 cp src/include/espeak-ng/speak_lib.h ../

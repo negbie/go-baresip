@@ -168,6 +168,10 @@ func Save(textInput, wavOutput string) int {
 		return -1
 	}
 
+	if _, err := os.Stat(wavOutput); err == nil {
+		return 0
+	}
+
 	C.wavefile = C.CString(wavOutput)
 	defer C.free(unsafe.Pointer(C.wavefile))
 
@@ -199,10 +203,11 @@ func Save(textInput, wavOutput string) int {
 
 	defer res.Close()
 
-	// Skip WAV file header
-	if len(data) > 44 {
-		data = data[44:]
+	if len(data) <= 44 {
+		return -1
 	}
+	// Skip WAV file header
+	data = data[44:]
 
 	_, err = res.Write(data)
 	if err != nil {
