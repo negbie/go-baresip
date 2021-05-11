@@ -297,7 +297,7 @@ func (c *dataSubChunk) applySubchunk2Size(subchunk2Size int) {
 	applyLittleEndianInteger(c.Subchunk2Size[:], subchunk2Size, 4)
 }
 
-func AddWavHeader(pcm []byte, channels int, sampleRate int, bitsPerSample int) (wav []byte, err error) {
+func AddWavHeader(pcm []byte, sampleRate int, channels int, bitsPerSample int) (wav []byte, err error) {
 	if channels != 1 && channels != 2 {
 		return wav, errors.New("invalid_channels_value")
 	}

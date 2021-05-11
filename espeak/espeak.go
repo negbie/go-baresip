@@ -4,7 +4,7 @@
 package espeak
 
 /*
-#cgo linux LDFLAGS: ${SRCDIR}/libespeak-ng.a -lm
+#cgo LDFLAGS: ${SRCDIR}/libespeak-ng.a -lm
 
 #include <stdlib.h>
 #include <string.h>
@@ -99,9 +99,10 @@ static int EspeakSynth(const char *text, unsigned int position, espeak_POSITION_
 */
 import "C"
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"unsafe"
 )
 
@@ -163,12 +164,11 @@ func SynthFlags(text string, position uint, positionType EspeakPositionType, end
 }
 
 func Save(textInput, wavOutput string) int {
-	outfile := checkWav(wavOutput)
-	if _, err := os.Stat(filepath.Dir(outfile)); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Dir(wavOutput)); os.IsNotExist(err) {
 		return -1
 	}
 
-	C.wavefile = C.CString(outfile)
+	C.wavefile = C.CString(wavOutput)
 	defer C.free(unsafe.Pointer(C.wavefile))
 
 	C.espeak_SetSynthCallback((*C.t_espeak_callback)(C.callback))
@@ -180,7 +180,47 @@ func Save(textInput, wavOutput string) int {
 		return x
 	}
 
-	return int(C.espeak_Synchronize())
+	if y := int(C.espeak_Synchronize()); y != 0 {
+		return -1
+	}
+
+	data, err := ioutil.ReadFile(wavOutput)
+	if err != nil {
+		return -1
+	}
+
+	buf := &bytes.Buffer{}
+
+	res, err := NewResampler(buf, float64(22050), float64(8000), 1, I16, HighQ)
+	if err != nil {
+		os.Remove(wavOutput)
+		return -1
+	}
+
+	defer res.Close()
+
+	// Skip WAV file header
+	if len(data) > 44 {
+		data = data[44:]
+	}
+
+	_, err = res.Write(data)
+	if err != nil {
+		os.Remove(wavOutput)
+		return -1
+	}
+
+	out, err := AddWavHeader(buf.Bytes(), 8000, 1, 16)
+	if err != nil {
+		return -1
+	}
+
+	err = ioutil.WriteFile(wavOutput, out, 0644)
+	if err != nil {
+		return -1
+	}
+
+	return 0
 }
 
 func Sync() int {
@@ -231,15 +271,4 @@ func Terminate() int {
 
 func IsPlaying() int {
 	return int(C.espeak_IsPlaying())
-}
-
-func checkWav(s string) string {
-	s = strings.ToLower(s)
-	for s[len(s)-1] == '.' {
-		s = s[:len(s)-1]
-	}
-	if !strings.HasSuffix(s, ".wav") {
-		s += ".wav"
-	}
-	return s
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
+	"github.com/negbie/go-baresip/espeak"
 )
 
 var staticlokiLabel = map[string]string{
@@ -29,6 +30,12 @@ func main() {
 		return
 	}
 
+	if err := espeak.Initialize("./"); err == -1 {
+		return
+	}
+	espeak.SetVoiceByName("en+announcer")
+	espeak.SetParameter(espeak.RATE, 160, 0)
+
 	loki, lerr := NewLokiClient(*lokiServer, 10, 4)
 	if lerr != nil {
 		log.Println(lerr)
@@ -51,6 +58,15 @@ func main() {
 				} else {
 					log.Println(e)
 				}
+
+				if e.Type == "CALL_INCOMING" {
+					espeak.Save("Thank you for your call "+e.PeerURI, e.PeerURI)
+
+				}
+				if e.Type == "CALL_ESTABLISHED" {
+					gb.CmdAusrc("aufile," + e.PeerURI)
+				}
+
 			case r, ok := <-rChan:
 				if !ok {
 					continue
