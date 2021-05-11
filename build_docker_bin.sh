@@ -64,4 +64,18 @@ cd ..
 rm -rf espeak-ng
 cd ..
 
+if [ ! -d "soxr-code" ]; then
+    git clone https://git.code.sf.net/p/soxr/code soxr-code
+fi
+cd soxr-code
+cmake -DWITH_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0 .
+make
+cp src/libsoxr.a src/soxr.h ../
+make clean
+cd ..
+rm -rf soxr-code
+cd ..
+
+
 go build -ldflags "-w"  -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go
+

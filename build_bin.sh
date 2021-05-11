@@ -57,9 +57,19 @@ if [ ! -d "espeak-ng" ]; then
 fi
 cd espeak-ng
 ./autogen.sh
-./configure --without-async --without-mbrola --without-sonic --without-speechplayer --without-klatt
+./configure --without-async --without-mbrola --without-sonic --without-speechplayer
 make
 cp src/.libs/libespeak-ng.a ../
 cp src/include/espeak-ng/speak_lib.h ../
+make clean
+cd ..
+
+if [ ! -d "soxr-code" ]; then
+    git clone https://git.code.sf.net/p/soxr/code soxr-code
+fi
+cd soxr-code
+cmake -DWITH_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0 .
+make
+cp src/libsoxr.a src/soxr.h ../
 make clean
 cd ..
