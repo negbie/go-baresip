@@ -6,3 +6,4 @@ speaker.wav
 go-baresip-demo/go-baresip-demo
 libbaresip/git
 espeak/espeak-ng
+espeak/soxr-code
