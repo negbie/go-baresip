@@ -181,7 +181,7 @@ func Save(textInput, wavOutput string) int {
 	defer C.free(unsafe.Pointer(ctext))
 
 	if x := int(C.EspeakSynth(ctext, C.uint(0), C.espeak_POSITION_TYPE(0), C.uint(0), C.uint(1))); x != 0 {
-		return x
+		return -1
 	}
 
 	if y := int(C.espeak_Synchronize()); y != 0 {
@@ -197,7 +197,6 @@ func Save(textInput, wavOutput string) int {
 
 	res, err := NewResampler(buf, float64(22050), float64(8000), 1, I16, HighQ)
 	if err != nil {
-		os.Remove(wavOutput)
 		return -1
 	}
 
@@ -211,7 +210,6 @@ func Save(textInput, wavOutput string) int {
 
 	_, err = res.Write(data)
 	if err != nil {
-		os.Remove(wavOutput)
 		return -1
 	}
 
