@@ -109,8 +109,8 @@ type Baresip struct {
 	ctrlConnAlive  uint32
 	responseChan   chan ResponseMsg
 	eventChan      chan EventMsg
-	responseWsChan chan ResponseMsg
-	eventWsChan    chan EventMsg
+	responseWsChan chan []byte
+	eventWsChan    chan []byte
 	ctrlStream     *reader
 }
 
@@ -128,11 +128,18 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
 	}
+
 	if b.wsAddr != "" {
-		b.responseWsChan = make(chan ResponseMsg, 100)
-		b.eventWsChan = make(chan EventMsg, 100)
-		http.HandleFunc("/ws", b.wsCtrl)
+		b.responseWsChan = make(chan []byte, 100)
+		b.eventWsChan = make(chan []byte, 100)
+
+		h := newWsHub(b)
+		go h.run()
+
 		http.HandleFunc("/", b.home)
+		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+			serveWs(h, w, r)
+		})
 		go http.ListenAndServe(b.wsAddr, nil)
 	}
 
@@ -182,7 +189,7 @@ func (b *Baresip) read() {
 			b.eventChan <- e
 			if b.wsAddr != "" {
 				select {
-				case b.eventWsChan <- e:
+				case b.eventWsChan <- msg:
 				default:
 				}
 			}
@@ -200,7 +207,7 @@ func (b *Baresip) read() {
 			b.responseChan <- r
 			if b.wsAddr != "" {
 				select {
-				case b.responseWsChan <- r:
+				case b.responseWsChan <- msg:
 				default:
 				}
 			}
