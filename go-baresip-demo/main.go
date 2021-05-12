@@ -6,7 +6,6 @@ import (
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
-	"github.com/negbie/go-baresip/espeak"
 )
 
 var staticlokiLabel = map[string]string{
@@ -16,6 +15,7 @@ var staticlokiLabel = map[string]string{
 func main() {
 
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP server address")
+	wsAddr := flag.String("ws_address", "0.0.0.0:8080", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
 	autoDial := flag.String("auto_dial", "", "Auto dial SIP URI if it's not empty")
 	autoDialDelay := flag.Int("auto_dial_delay", 5000, "Set delay before auto dial [ms]")
@@ -24,17 +24,16 @@ func main() {
 	debug := flag.Bool("debug", false, "Set debug mode")
 	flag.Parse()
 
-	gb, err := gobaresip.New(gobaresip.SetConfigPath("."), gobaresip.SetAudioPath("./sounds"), gobaresip.SetDebug(*debug))
+	gb, err := gobaresip.New(
+		gobaresip.SetConfigPath("."),
+		gobaresip.SetAudioPath("./sounds"),
+		gobaresip.SetDebug(*debug),
+		gobaresip.SetWsAddr(*wsAddr),
+	)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	if err := espeak.Initialize("./"); err == -1 {
-		return
-	}
-	espeak.SetVoiceByName("en+announcer")
-	espeak.SetParameter(espeak.RATE, 160, 0)
 
 	loki, lerr := NewLokiClient(*lokiServer, 10, 4)
 	if lerr != nil {
@@ -57,14 +56,6 @@ func main() {
 					loki.Send(staticlokiLabel, e.Raw)
 				} else {
 					log.Println(e)
-				}
-
-				if e.Type == "CALL_INCOMING" {
-					espeak.Save("Thank you for your call "+e.PeerURI, e.PeerURI)
-
-				}
-				if e.Type == "CALL_ESTABLISHED" {
-					gb.CmdAusrc("aufile," + e.PeerURI)
 				}
 
 			case r, ok := <-rChan:

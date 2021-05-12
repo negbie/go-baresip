@@ -25,9 +25,9 @@ audio_path			./sounds
 #audio_player		alsa,default
 #audio_source		alsa,default
 #audio_alert		alsa,default
-#audio_source		aufile,./sounds/monorobo.wav
-audio_source		aubridge,pseudo0
-audio_player		aubridge,pseudo0
+audio_source		aufile,./sounds/monorobo.wav
+#audio_source		aubridge,nil
+audio_player		aubridge,nil
 #ausrc_srate		48000
 #auplay_srate		48000
 #ausrc_channels		0
@@ -195,11 +195,11 @@ module_app		ctrl_tcp.so
 
 
 # UI Modules parameters
-cons_listen		0.0.0.0:5555 # cons - Console UI UDP/TCP sockets
+cons_listen		127.0.0.1:5555 # cons - Console UI UDP/TCP sockets
 
-http_listen		0.0.0.0:8000 # httpd - HTTP Server
+http_listen		127.0.0.1:8000 # httpd - HTTP Server
 
-ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp - TCP interface JSON
+ctrl_tcp_listen		127.0.0.1:4444 # ctrl_tcp - TCP interface JSON
 
 evdev_device		/dev/input/event0
 

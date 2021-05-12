@@ -68,6 +68,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -98,16 +99,19 @@ type EventMsg struct {
 }
 
 type Baresip struct {
-	userAgent    string
-	ctrlAddr     string
-	configPath   string
-	audioPath    string
-	debug        bool
-	conn         net.Conn
-	connAlive    uint32
-	responseChan chan ResponseMsg
-	eventChan    chan EventMsg
-	ctrlStream   *reader
+	userAgent      string
+	ctrlAddr       string
+	wsAddr         string
+	configPath     string
+	audioPath      string
+	debug          bool
+	ctrlConn       net.Conn
+	ctrlConnAlive  uint32
+	responseChan   chan ResponseMsg
+	eventChan      chan EventMsg
+	responseWsChan chan ResponseMsg
+	eventWsChan    chan EventMsg
+	ctrlStream     *reader
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -124,6 +128,13 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
 	}
+	if b.wsAddr != "" {
+		b.responseWsChan = make(chan ResponseMsg, 100)
+		b.eventWsChan = make(chan EventMsg, 100)
+		http.HandleFunc("/ws", b.wsCtrl)
+		http.HandleFunc("/", b.home)
+		go http.ListenAndServe(b.wsAddr, nil)
+	}
 
 	if err := b.setup(); err != nil {
 		return nil, err
@@ -137,15 +148,15 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 
 func (b *Baresip) connectCtrl() error {
 	var err error
-	b.conn, err = net.Dial("tcp", b.ctrlAddr)
+	b.ctrlConn, err = net.Dial("tcp", b.ctrlAddr)
 	if err != nil {
-		atomic.StoreUint32(&b.connAlive, 0)
+		atomic.StoreUint32(&b.ctrlConnAlive, 0)
 		return fmt.Errorf("%v: please make sure ctrl_tcp is enabled", err)
 	}
 
-	b.ctrlStream = newReader(b.conn)
+	b.ctrlStream = newReader(b.ctrlConn)
 
-	atomic.StoreUint32(&b.connAlive, 1)
+	atomic.StoreUint32(&b.ctrlConnAlive, 1)
 	return nil
 }
 
@@ -157,7 +168,7 @@ func (b *Baresip) read() {
 			return
 		}
 
-		if atomic.LoadUint32(&b.connAlive) == 0 {
+		if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
 			return
 		}
 
@@ -169,6 +180,12 @@ func (b *Baresip) read() {
 				log.Println(err, string(msg))
 			}
 			b.eventChan <- e
+			if b.wsAddr != "" {
+				select {
+				case b.eventWsChan <- e:
+				default:
+				}
+			}
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
 			if bytes.Contains(msg, []byte("keep_active_ping")) {
 				continue
@@ -181,14 +198,20 @@ func (b *Baresip) read() {
 				log.Println(err, string(msg))
 			}
 			b.responseChan <- r
+			if b.wsAddr != "" {
+				select {
+				case b.responseWsChan <- r:
+				default:
+				}
+			}
 		}
 	}
 }
 
 func (b *Baresip) Close() {
-	atomic.StoreUint32(&b.connAlive, 0)
-	if b.conn != nil {
-		b.conn.Close()
+	atomic.StoreUint32(&b.ctrlConnAlive, 0)
+	if b.ctrlConn != nil {
+		b.ctrlConn.Close()
 	}
 	close(b.responseChan)
 	close(b.eventChan)

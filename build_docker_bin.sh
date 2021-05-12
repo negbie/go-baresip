@@ -6,7 +6,7 @@ set -ex
 
 apt update
 command -v go version >/dev/null 2>&1 || { apt install -y golang; }
-apt install -y autoconf automake libtool pkg-config make gcc zlib1g-dev libssl-dev openssl git wget
+apt install -y autoconf automake libtool pkg-config make cmake gcc zlib1g-dev libssl-dev openssl git wget
 
 cd /mnt
 rm -rf libbaresip
@@ -76,5 +76,6 @@ rm -rf soxr-code
 cd ..
 
 
+cd /mnt
 go build -ldflags "-w"  -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go
 

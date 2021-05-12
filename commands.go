@@ -86,11 +86,11 @@ func (b *Baresip) Cmd(command, params, token string) error {
 		return err
 	}
 
-	if atomic.LoadUint32(&b.connAlive) == 0 {
+	if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
 		return fmt.Errorf("can't write command to closed tcp_ctrl connection")
 	}
 
-	_, err = b.conn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
+	_, err = b.ctrlConn.Write([]byte(fmt.Sprintf("%d:%s,", len(msg), msg)))
 	if err != nil {
 		return err
 	}

@@ -18,6 +18,14 @@ func SetCtrlTCPAddr(opt string) func(*Baresip) error {
 	}
 }
 
+// SetWsAddr sets the ws address.
+func SetWsAddr(opt string) func(*Baresip) error {
+	return func(b *Baresip) error {
+		b.wsAddr = opt
+		return nil
+	}
+}
+
 // SetConfigPath sets the config path.
 func SetConfigPath(opt string) func(*Baresip) error {
 	return func(b *Baresip) error {
