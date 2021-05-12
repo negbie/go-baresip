@@ -29,9 +29,9 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-// Client is a middleman between the websocket connection and the hub.
-type Client struct {
-	hub *WsHub
+// client is a middleman between the websocket connection and the hub.
+type client struct {
+	hub *wsHub
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -45,7 +45,7 @@ type Client struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -70,7 +70,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -111,13 +111,13 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *WsHub, w http.ResponseWriter, r *http.Request) {
+func serveWs(hub *wsHub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -126,35 +126,35 @@ func serveWs(hub *WsHub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-// WsHub maintains the set of active clients and broadcasts events to the
+// wsHub maintains the set of active clients and broadcasts events to the
 // clients.
-type WsHub struct {
+type wsHub struct {
 	// Registered clients.
-	clients map[*Client]bool
+	clients map[*client]bool
 
 	// Inbound command from the clients.
 	command chan []byte
 
 	// Register requests from the clients.
-	register chan *Client
+	register chan *client
 
 	// Unregister requests from clients.
-	unregister chan *Client
+	unregister chan *client
 
 	bs *Baresip
 }
 
-func newWsHub(bs *Baresip) *WsHub {
-	return &WsHub{
-		clients:    make(map[*Client]bool),
+func newWsHub(bs *Baresip) *wsHub {
+	return &wsHub{
+		clients:    make(map[*client]bool),
 		command:    make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
+		register:   make(chan *client),
+		unregister: make(chan *client),
 		bs:         bs,
 	}
 }
 
-func (h *WsHub) run() {
+func (h *wsHub) run() {
 	for {
 		select {
 		case client := <-h.register:
