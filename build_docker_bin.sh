@@ -69,7 +69,7 @@ fi
 cd soxr-code
 cmake -DWITH_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0 .
 make
-cp src/libsoxr.a src/soxr.h ../
+cp src/libsoxr.a src/soxr.h ../espeak
 make clean
 cd ..
 rm -rf soxr-code
