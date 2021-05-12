@@ -61,7 +61,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		c.hub.broadcast <- message
+		c.hub.command <- message
 	}
 }
 
@@ -126,14 +126,14 @@ func serveWs(hub *WsHub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-// WsHub maintains the set of active clients and broadcasts messages to the
+// WsHub maintains the set of active clients and broadcasts events to the
 // clients.
 type WsHub struct {
 	// Registered clients.
 	clients map[*Client]bool
 
-	// Inbound messages from the clients.
-	broadcast chan []byte
+	// Inbound command from the clients.
+	command chan []byte
 
 	// Register requests from the clients.
 	register chan *Client
@@ -147,7 +147,7 @@ type WsHub struct {
 func newWsHub(bs *Baresip) *WsHub {
 	return &WsHub{
 		clients:    make(map[*Client]bool),
-		broadcast:  make(chan []byte),
+		command:    make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		bs:         bs,
@@ -164,13 +164,15 @@ func (h *WsHub) run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case message := <-h.broadcast:
-			cm := string(message)
+		case msg := <-h.command:
+			cm := string(msg)
 			cp := strings.Split(cm, " ")
 			if len(cp) == 1 {
 				h.bs.Cmd(cp[0], "", "command_"+cp[0])
 			} else if len(cp) == 2 {
 				h.bs.Cmd(cp[0], cp[1], "command_"+cp[0])
+			} else if len(cp) > 2 {
+				h.bs.Cmd(cm, "", "command_too_long")
 			}
 		case e, ok := <-h.bs.eventWsChan:
 			if !ok {
@@ -207,7 +209,7 @@ func prefixTime(prefix string, suffix []byte) []byte {
 	return b
 }
 
-func (b *Baresip) home(w http.ResponseWriter, r *http.Request) {
+func serveRoot(w http.ResponseWriter, r *http.Request) {
 	homeTemplate.Execute(w, "ws://"+r.Host+"/ws")
 }
 
@@ -246,7 +248,7 @@ window.onload = function () {
         conn = new WebSocket("{{.}}");
         conn.onclose = function (evt) {
             var item = document.createElement("div");
-            item.innerHTML = "<b>Connection closed.</b>";
+            item.innerHTML = "<b>Connection closed. Please reload.</b>";
             appendLog(item);
         };
         conn.onmessage = function (evt) {

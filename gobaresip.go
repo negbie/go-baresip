@@ -136,7 +136,7 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		h := newWsHub(b)
 		go h.run()
 
-		http.HandleFunc("/", b.home)
+		http.HandleFunc("/", serveRoot)
 		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 			serveWs(h, w, r)
 		})

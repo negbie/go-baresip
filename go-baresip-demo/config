@@ -81,7 +81,7 @@ rtp_stats		yes
 #module			stdio.so
 #module			cons.so
 #module			evdev.so
-module			httpd.so
+#module			httpd.so
 
 # Audio codec Modules (in order)
 #module			opus.so
