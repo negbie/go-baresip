@@ -1,6 +1,7 @@
 package gobaresip
 
 import (
+	"bytes"
 	"html/template"
 	"log"
 	"net/http"
@@ -165,7 +166,10 @@ func (h *wsHub) run() {
 				close(client.send)
 			}
 		case msg := <-h.command:
-			cm := string(msg)
+			cm := string(bytes.ToLower(bytes.TrimSpace(msg)))
+			if strings.Contains(cm, "quit") {
+				continue
+			}
 			cp := strings.Split(cm, " ")
 			if len(cp) == 1 {
 				h.bs.Cmd(cp[0], "", "command_"+cp[0])
