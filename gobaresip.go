@@ -185,6 +185,7 @@ func (b *Baresip) read() {
 			err := json.Unmarshal(msg, &e)
 			if err != nil {
 				log.Println(err, string(msg))
+				continue
 			}
 			b.eventChan <- e
 			if b.wsAddr != "" {
@@ -200,9 +201,10 @@ func (b *Baresip) read() {
 
 			var r ResponseMsg
 			r.Raw = string(msg)
-			err := json.Unmarshal(bytes.Replace(msg, []byte("\\n"), []byte(""), -1), &r)
+			err := json.Unmarshal(msg, &r)
 			if err != nil {
 				log.Println(err, string(msg))
+				continue
 			}
 			b.responseChan <- r
 			if b.wsAddr != "" {

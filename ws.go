@@ -184,7 +184,7 @@ func (h *wsHub) run() {
 			}
 			for client := range h.clients {
 				select {
-				case client.send <- prefixTime(time.Now().Format("2006-01-02 15:04:05 "), e):
+				case client.send <- e:
 				default:
 					close(client.send)
 					delete(h.clients, client)
@@ -196,7 +196,7 @@ func (h *wsHub) run() {
 			}
 			for client := range h.clients {
 				select {
-				case client.send <- prefixTime(time.Now().Format("2006-01-02 15:04:05 "), r):
+				case client.send <- r:
 				default:
 					close(client.send)
 					delete(h.clients, client)
@@ -206,15 +206,10 @@ func (h *wsHub) run() {
 	}
 }
 
-func prefixTime(prefix string, suffix []byte) []byte {
-	b := make([]byte, len(prefix)+len(suffix))
-	n := copy(b, prefix)
-	copy(b[n:], suffix)
-	return b
-}
-
 func serveRoot(w http.ResponseWriter, r *http.Request) {
-	homeTemplate.Execute(w, "ws://"+r.Host+"/ws")
+	if err := homeTemplate.Execute(w, "ws://"+r.Host+"/ws"); err != nil {
+		log.Println(err)
+	}
 }
 
 var homeTemplate = template.Must(template.New("").Parse(`
@@ -259,7 +254,11 @@ window.onload = function () {
             var messages = evt.data.split('\n');
             for (var i = 0; i < messages.length; i++) {
                 var item = document.createElement("div");
-                item.innerText = messages[i];
+                var j = JSON.parse(messages[i]);
+                var d = new Date().toLocaleString()
+                j["time"] = d;
+				j["data"] = j["data"].trim().replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+                item.innerText = JSON.stringify(j, undefined, 2);
                 appendLog(item);
             }
         };
@@ -280,7 +279,7 @@ window.onload = function () {
     <input type="submit" value="Send" />
 </form>
 
-<div id="cmd" style="line-height: 0.7;max-height: 90vh;overflow-y: scroll;">
+<div id="cmd" style="line-height: 0.7;max-height: 95vh;overflow-y: auto;">
 <pre>
 <p>accept                Accept incoming call
 <p>acceptdir ..          Accept incoming call with direction.
@@ -323,8 +322,11 @@ window.onload = function () {
 <p>uareg ..              UA register [index]
 </pre>
 </div>
+
 </td><td valign="top" width="80%">
-<div id="log" style="line-height: 1.7;max-height: 90vh;overflow-y: scroll;"></div>
+<pre>
+<div id="log" style="line-height: 1.7;max-height: 85vh;overflow-y: scroll;"></div>
+</pre>
 </td></tr></table>
 </body>
 </html>
