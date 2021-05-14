@@ -79,5 +79,5 @@ cd ..
 
 
 cd /mnt
-go build -ldflags "-w"  -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go
+go build -ldflags="-s -w" -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go
 

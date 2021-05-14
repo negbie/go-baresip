@@ -1,9 +1,11 @@
 package gobaresip
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 )
 
@@ -79,7 +81,7 @@ func buildCommand(command, params, token string) *CommandMsg {
 	}
 }
 
-// Command will send a raw baresip command over ctrl_tcp.
+// Cmd will send a raw baresip command over ctrl_tcp.
 func (b *Baresip) Cmd(command, params, token string) error {
 	msg, err := json.Marshal(buildCommand(command, params, token))
 	if err != nil {
@@ -98,170 +100,193 @@ func (b *Baresip) Cmd(command, params, token string) error {
 	return nil
 }
 
-// CommandAccept will accept incoming call
+// CmdAccept will accept incoming call
 func (b *Baresip) CmdAccept() error {
 	c := "accept"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandAcceptdir will accept incoming call with audio and videodirection.
+// CmdAcceptdir will accept incoming call with audio and videodirection.
 func (b *Baresip) CmdAcceptdir(s string) error {
 	c := "acceptdir"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandAnswermode will set answer mode
+// CmdAnswermode will set answer mode
 func (b *Baresip) CmdAnswermode(s string) error {
 	c := "answermode"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandAuplay will switch audio player
+// CmdAuplay will switch audio player
 func (b *Baresip) CmdAuplay(s string) error {
 	c := "auplay"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandAusrc will switch audio source
+// CmdAusrc will switch audio source
 func (b *Baresip) CmdAusrc(s string) error {
 	c := "ausrc"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandCallstat will show call status
+// CmdCallstat will show call status
 func (b *Baresip) CmdCallstat() error {
 	c := "callstat"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandContact_next will set next contact
+// CmdContact_next will set next contact
 func (b *Baresip) CmdContact_next() error {
 	c := "contact_next"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandContact_prev will set previous contact
+// CmdContact_prev will set previous contact
 func (b *Baresip) CmdContact_prev() error {
 	c := "contact_prev"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandAutodial will dial number automatically
+// CmdAutodial will dial number automatically
 func (b *Baresip) CmdAutodial(s string) error {
 	c := "autodial dial"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandAutodialdelay will set delay before auto dial [ms]
+// CmdAutodialdelay will set delay before auto dial [ms]
 func (b *Baresip) CmdAutodialdelay(n int) error {
 	c := "autodialdelay"
 	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
-// CommandDial will dial number
+// CmdDial will dial number
 func (b *Baresip) CmdDial(s string) error {
 	c := "dial"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandDialcontact will dial current contact
+// CmdDialcontact will dial current contact
 func (b *Baresip) CmdDialcontact() error {
 	c := "dialcontact"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandDialdir will dial with audio and videodirection
+// CmdDialdir will dial with audio and videodirection
 func (b *Baresip) CmdDialdir(s string) error {
 	c := "dialdir"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandAutohangup will hangup call automatically
+// CmdAutohangup will hangup call automatically
 func (b *Baresip) CmdAutohangup() error {
 	c := "autohangup"
 	return b.Cmd(c, "hangup", "command_"+c)
 }
 
-// CommandAutohangupdelay will set delay before hangup [ms]
+// CmdAutohangupdelay will set delay before hangup [ms]
 func (b *Baresip) CmdAutohangupdelay(n int) error {
 	c := "autohangupdelay"
 	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
-// CommandHangup will hangup call
+// CmdHangup will hangup call
 func (b *Baresip) CmdHangup() error {
 	c := "hangup"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandHangupall will hangup all calls with direction
+// CmdHangupID will hangup call with Call-ID
+func (b *Baresip) CmdHangupID(callID string) error {
+	c := "hangup"
+	return b.Cmd(c, callID, "command_"+c)
+}
+
+// CmdHangupall will hangup all calls with direction
 func (b *Baresip) CmdHangupall(s string) error {
 	c := "hangupall"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandInsmod will load module
+// CmdInsmod will load module
 func (b *Baresip) CmdInsmod(s string) error {
 	c := "insmod"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandListcalls will list active calls
+// CmdListcalls will list active calls
 func (b *Baresip) CmdListcalls() error {
 	c := "listcalls"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandReginfo will list registration info
+// CmdReginfo will list registration info
 func (b *Baresip) CmdReginfo() error {
 	c := "reginfo"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandRmmod will unload module
+// CmdRmmod will unload module
 func (b *Baresip) CmdRmmod(s string) error {
 	c := "rmmod"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandSetadelay will set answer delay for outgoing call
+// CmdSetadelay will set answer delay for outgoing call
 func (b *Baresip) CmdSetadelay(n int) error {
 	c := "setadelay"
 	return b.Cmd(c, strconv.Itoa(n), "command_"+c+"_"+strconv.Itoa(n))
 }
 
-// CommandUadel will delete User-Agent
+// CmdUadel will delete User-Agent
 func (b *Baresip) CmdUadel(s string) error {
 	c := "uadel"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandUadelall will delete all User-Agents
+// CmdUadelall will delete all User-Agents
 func (b *Baresip) CmdUadelall() error {
 	c := "uadelall"
 	return b.Cmd(c, "", "command_"+c)
 }
 
-// CommandUafind will find User-Agent <aor>
+// CmdUafind will find User-Agent <aor>
 func (b *Baresip) CmdUafind(s string) error {
 	c := "uafind"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandUanew will create User-Agent
+// CmdUanew will create User-Agent
 func (b *Baresip) CmdUanew(s string) error {
 	c := "uanew"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandUareg will register <regint> [index]
+// CmdUareg will register <regint> [index]
 func (b *Baresip) CmdUareg(s string) error {
 	c := "uareg"
 	return b.Cmd(c, s, "command_"+c+"_"+s)
 }
 
-// CommandQuit will quit baresip
+// CmdQuit will quit baresip
 func (b *Baresip) CmdQuit() error {
 	c := "quit"
 	return b.Cmd(c, "", "command_"+c)
+}
+
+func (b *Baresip) CmdWs(raw []byte) error {
+	msg := string(bytes.ToLower(bytes.TrimSpace(raw)))
+	if strings.Contains(msg, "quit") {
+		return nil
+	}
+	m := strings.Split(msg, " ")
+
+	if len(m) == 1 {
+		b.Cmd(m[0], "", "command_"+m[0])
+	} else if len(m) == 2 {
+		b.Cmd(m[0], m[1], "command_"+m[0])
+	} else if len(m) > 2 {
+		b.Cmd(msg, "", "")
+	}
+	return nil
 }

@@ -1,11 +1,9 @@
 package gobaresip
 
 import (
-	"bytes"
 	"html/template"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -166,17 +164,8 @@ func (h *wsHub) run() {
 				close(client.send)
 			}
 		case msg := <-h.command:
-			cm := string(bytes.ToLower(bytes.TrimSpace(msg)))
-			if strings.Contains(cm, "quit") {
-				continue
-			}
-			cp := strings.Split(cm, " ")
-			if len(cp) == 1 {
-				h.bs.Cmd(cp[0], "", "command_"+cp[0])
-			} else if len(cp) == 2 {
-				h.bs.Cmd(cp[0], cp[1], "command_"+cp[0])
-			} else if len(cp) > 2 {
-				h.bs.Cmd(cm, "", "command_too_long")
+			if err := h.bs.CmdWs(msg); err != nil {
+				log.Println(err)
 			}
 		case e, ok := <-h.bs.eventWsChan:
 			if !ok {
