@@ -242,6 +242,9 @@ window.onload = function () {
         conn.onmessage = function (evt) {
             var messages = evt.data.split('\n');
             for (var i = 0; i < messages.length; i++) {
+				if (messages[i].length < 10) {
+					continue;
+				}
                 var item = document.createElement("div");
                 var j = JSON.parse(messages[i]);
                 var d = new Date().toLocaleString()

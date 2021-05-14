@@ -190,7 +190,7 @@ func (b *Baresip) read() {
 			b.eventChan <- e
 			if b.wsAddr != "" {
 				select {
-				case b.eventWsChan <- msg:
+				case b.eventWsChan <- appendByte(msg, []byte("\n")):
 				default:
 				}
 			}
@@ -209,12 +209,19 @@ func (b *Baresip) read() {
 			b.responseChan <- r
 			if b.wsAddr != "" {
 				select {
-				case b.responseWsChan <- msg:
+				case b.responseWsChan <- appendByte(msg, []byte("\n")):
 				default:
 				}
 			}
 		}
 	}
+}
+
+func appendByte(prefix []byte, suffix []byte) []byte {
+	b := make([]byte, len(prefix)+len(suffix))
+	n := copy(b, prefix)
+	copy(b[n:], suffix)
+	return b
 }
 
 func (b *Baresip) Close() {
@@ -238,7 +245,7 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 
 func (b *Baresip) keepActive() {
 	for {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		b.Cmd("listcalls", "", "keep_active_ping")
 	}
 }
