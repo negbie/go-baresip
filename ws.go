@@ -240,11 +240,16 @@ window.onload = function () {
             appendLog(item);
         };
         conn.onmessage = function (evt) {
+            var filter = document.getElementById("filter");
             var messages = evt.data.split('\n');
             for (var i = 0; i < messages.length; i++) {
-				if (messages[i].length < 10) {
-					continue;
-				}
+                if (messages[i].length < 10) {
+                    continue;
+                }
+                if (!messages[i].includes(filter.value)) {
+                    continue;
+                }
+
                 var item = document.createElement("div");
                 var j = JSON.parse(messages[i]);
                 var d = new Date().toLocaleString()
@@ -269,8 +274,9 @@ window.onload = function () {
 <table border="1">
 <tr><td valign="top" width="20%">
 <form id="form">
-    <input type="text" id="msg" size="35" autofocus />
-    <input type="submit" value="Send" />
+    <input type="text" id="msg" size="45" autofocus placeholder="Please enter one of the below commands here"><br>
+    <input type="text" id="filter" size="45" placeholder="Text to filter events"><br>
+    <input type="submit" value="Enter"><br>
 </form>
 
 <div id="cmd" style="line-height: 0.7;max-height: 95vh;overflow-y: auto;">
