@@ -18,7 +18,7 @@ func main() {
 	wsAddr := flag.String("ws_address", "0.0.0.0:8080", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
 	repeatDial := flag.String("repeat_dial", "", "Repeat dial SIP URI if it's not empty")
-	repeatDialInterval := flag.Int("repeat_dial_interval", 5, "Set repeat dial interval [s]")
+	repeatDialInterval := flag.Int("repeat_dial_interval", 30, "Set repeat dial interval [s]")
 	debug := flag.Bool("debug", false, "Set debug mode")
 	flag.Parse()
 

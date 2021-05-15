@@ -319,11 +319,10 @@ func (b *Baresip) CmdRepeatDial(s string) error {
 				if atomic.LoadUint32(&b.autotest.cancel) == 1 {
 					return
 				}
-
 				b.CmdDial(strings.TrimSpace(v))
-				d := int(atomic.LoadUint32(&b.autotest.interval))
-				time.Sleep(time.Duration(d) * time.Second)
 			}
+			d := int(atomic.LoadUint32(&b.autotest.interval))
+			time.Sleep(time.Duration(d) * time.Second)
 		}
 	}(uris)
 
@@ -345,6 +344,6 @@ func (b *Baresip) CmdRepeatDialInterval(n int) error {
 func (b *Baresip) CmdRepeatDialCancel() error {
 	atomic.StoreUint32(&b.autotest.cancel, 1)
 	b.autotest.uris = ""
-	b.CmdHangupall("out")
+	b.CmdHangupall("all")
 	return b.Cmd("repeatdialinfo", "", "cmd_repeatdialcancel")
 }

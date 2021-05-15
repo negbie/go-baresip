@@ -133,7 +133,7 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
-	atomic.StoreUint32(&b.autotest.interval, 5)
+	atomic.StoreUint32(&b.autotest.interval, 30)
 
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
