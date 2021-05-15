@@ -17,10 +17,8 @@ func main() {
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP server address")
 	wsAddr := flag.String("ws_address", "0.0.0.0:8080", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
-	autoDial := flag.String("auto_dial", "", "Auto dial SIP URI if it's not empty")
-	autoDialDelay := flag.Int("auto_dial_delay", 5000, "Set delay before auto dial [ms]")
-	autoHangup := flag.Bool("auto_hangup", true, "Set auto hangup")
-	autoHangupDelay := flag.Int("auto_hangup_delay", 5000, "Set delay before auto hangup [ms]")
+	repeatDial := flag.String("repeat_dial", "", "Repeat dial SIP URI if it's not empty")
+	repeatDialInterval := flag.Int("repeat_dial_interval", 5, "Set repeat dial interval [s]")
 	debug := flag.Bool("debug", false, "Set debug mode")
 	flag.Parse()
 
@@ -53,9 +51,9 @@ func main() {
 					continue
 				}
 				if lerr == nil {
-					loki.Send(staticlokiLabel, e.Raw)
+					loki.Send(staticlokiLabel, string(e.RawJSON))
 				} else {
-					log.Println(e)
+					log.Println(string(e.RawJSON))
 				}
 
 			case r, ok := <-rChan:
@@ -63,9 +61,9 @@ func main() {
 					continue
 				}
 				if lerr == nil {
-					loki.Send(staticlokiLabel, r.Raw)
+					loki.Send(staticlokiLabel, string(r.RawJSON))
 				} else {
-					log.Println(r)
+					log.Println(string(r.RawJSON))
 				}
 			}
 		}
@@ -75,29 +73,12 @@ func main() {
 		// Give baresip some time to init and register ua
 		time.Sleep(1 * time.Second)
 
-		if *autoHangup {
-			if *autoHangupDelay >= 1000 {
-				if err := gb.CmdAutohangupdelay(*autoHangupDelay); err != nil {
-					log.Println(err)
-				}
-				if err := gb.CmdAutohangup(); err != nil {
-					log.Println(err)
-				}
-			} else {
-				log.Println("auto_hangup_delay is too short")
+		if *repeatDial != "" {
+			if err := gb.CmdRepeatDialInterval(*repeatDialInterval); err != nil {
+				log.Println(err)
 			}
-		}
-
-		if *autoDial != "" {
-			if *autoDialDelay >= 1000 {
-				if err := gb.CmdAutodialdelay(*autoDialDelay); err != nil {
-					log.Println(err)
-				}
-				if err := gb.CmdAutodial(*autoDial); err != nil {
-					log.Println(err)
-				}
-			} else {
-				log.Println("auto_dial_delay is too short")
+			if err := gb.CmdRepeatDial(*repeatDial); err != nil {
+				log.Println(err)
 			}
 		} else if *dial != "" {
 			if err := gb.CmdDial(*dial); err != nil {

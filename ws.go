@@ -276,18 +276,11 @@ window.onload = function () {
 <div id="cmd" style="line-height: 0.7;max-height: 95vh;overflow-y: auto;">
 <pre>
 <p>accept                Accept incoming call
-<p>acceptdir ..          Accept incoming call with direction.
+<p>acceptdir ..          Accept incoming call with direction
 <p>answermode ..         Set answer mode
 <p>aubitrate ..          Set audio bitrate
 <p>audio_debug           Audio stream
 <p>ausrc ..              Switch audio source
-<p>autodial ..           Set auto dial command
-<p>autodialcancel        Cancel auto dial
-<p>autodialdelay ..      Set delay before auto dial [ms]
-<p>autohangup ..         Set auto hangup command
-<p>autohangupcancel      Cancel auto hangup
-<p>autohangupdelay ..    Set delay before hangup [ms]
-<p>autostat              Print autotest status
 <p>callfind ..           Find call
 <p>callstat              Call status
 <p>contact_next          Set next contact
@@ -295,7 +288,7 @@ window.onload = function () {
 <p>contacts              List contacts
 <p>dial ..               Dial
 <p>dialcontact           Dial current contact
-<p>dialdir ..            Dial with audio and videodirection.
+<p>dialdir ..            Dial with audio and videodirection
 <p>dnd ..                Set Do not Disturb
 <p>hangup                Hangup call
 <p>hangupall ..          Hangup all calls with direction
@@ -306,6 +299,10 @@ window.onload = function () {
 <p>mute                  Call mute/un-mute
 <p>reginfo               Registration info
 <p>reinvite              Send re-INVITE
+<p>repeatdial ..         Set repeat dial
+<p>repeatdialcancel      Cancel repeat dial
+<p>repeatdialinterval .. Set repeat dial interval [s]
+<p>repeatdialinfo        Print repeat dial info
 <p>resume                Call resume
 <p>setadelay ..          Set answer delay for outgoing call
 <p>sndcode ..            Send Code

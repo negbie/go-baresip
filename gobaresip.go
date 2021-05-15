@@ -69,6 +69,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -80,7 +81,7 @@ type ResponseMsg struct {
 	Ok       bool   `json:"ok,omitempty"`
 	Data     string `json:"data,omitempty"`
 	Token    string `json:"token,omitempty"`
-	Raw      string
+	RawJSON  []byte `json:"-"`
 }
 
 //EventMsg
@@ -95,7 +96,7 @@ type EventMsg struct {
 	ID              string `json:"id,omitempty"`
 	RemoteAudioDir  string `json:"remoteaudiodir,omitempty"`
 	Param           string `json:"param,omitempty"`
-	Raw             string
+	RawJSON         []byte `json:"-"`
 }
 
 type Baresip struct {
@@ -112,6 +113,13 @@ type Baresip struct {
 	responseWsChan chan []byte
 	eventWsChan    chan []byte
 	ctrlStream     *reader
+	autotest       at
+}
+
+type at struct {
+	uris     string
+	cancel   uint32
+	interval uint32
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -124,6 +132,8 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 	if err := b.SetOption(options...); err != nil {
 		return nil, err
 	}
+
+	atomic.StoreUint32(&b.autotest.interval, 5)
 
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
@@ -181,16 +191,17 @@ func (b *Baresip) read() {
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
 			var e EventMsg
-			e.Raw = string(msg)
-			err := json.Unmarshal(msg, &e)
+			e.RawJSON = msg
+
+			err := json.Unmarshal(e.RawJSON, &e)
 			if err != nil {
-				log.Println(err, string(msg))
+				log.Println(err, string(e.RawJSON))
 				continue
 			}
 			b.eventChan <- e
 			if b.wsAddr != "" {
 				select {
-				case b.eventWsChan <- appendByte(msg, []byte("\n")):
+				case b.eventWsChan <- appendByte(e.RawJSON, []byte("\n")):
 				default:
 				}
 			}
@@ -200,16 +211,29 @@ func (b *Baresip) read() {
 			}
 
 			var r ResponseMsg
-			r.Raw = string(msg)
-			err := json.Unmarshal(msg, &r)
+			r.RawJSON = msg
+
+			err := json.Unmarshal(r.RawJSON, &r)
 			if err != nil {
-				log.Println(err, string(msg))
+				log.Println(err, string(r.RawJSON))
 				continue
 			}
+
+			if strings.HasPrefix(r.Token, "cmd_repeat") {
+				r.Ok = true
+				r.Data = fmt.Sprintf("%+v", b.autotest)
+				rj, err := json.Marshal(r)
+				if err != nil {
+					log.Println(err, r.Data)
+					continue
+				}
+				r.RawJSON = rj
+			}
+
 			b.responseChan <- r
 			if b.wsAddr != "" {
 				select {
-				case b.responseWsChan <- appendByte(msg, []byte("\n")):
+				case b.responseWsChan <- appendByte(r.RawJSON, []byte("\n")):
 				default:
 				}
 			}
