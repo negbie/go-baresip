@@ -21,11 +21,11 @@ call_max_calls		10
 call_hold_other_calls	no
 
 # Audio
-audio_path			./sounds
+audio_path			sounds
 #audio_player		alsa,default
 #audio_source		alsa,default
 #audio_alert		alsa,default
-audio_source		aufile,./sounds/monorobo.wav
+audio_source		aufile,sounds/monorobo.wav
 #audio_source		aubridge,nil
 audio_player		aubridge,nil
 #ausrc_srate		48000

@@ -25,7 +25,7 @@ my_codec_modules="g711 g722"
 my_tls_modules="srtp"
 
 git clone https://github.com/baresip/re.git
-cd re; make libre.a; cp libre.a ../../re; cd ..
+cd re; make RELEASE=yes libre.a; cp libre.a ../../re; cd ..
 
 git clone https://github.com/baresip/rem.git
 cd rem; make librem.a; cp librem.a ../../rem; cd ..
@@ -41,7 +41,7 @@ cd baresip
 rm -rf modules/g722
 cp -ap ../../../g722 modules/
     
-make LIBRE_SO=../re LIBREM_PATH=../rem STATIC=1 libbaresip.a \
+make LIBRE_SO=../re LIBREM_PATH=../rem RELEASE=1 STATIC=1 libbaresip.a \
     MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_tls_modules"
 
 cp libbaresip.a ../../baresip; cd ..
@@ -79,5 +79,5 @@ cd ..
 
 
 cd /mnt
-go build -ldflags="-s -w" -o go-baresip-demo/go-baresip-demo go-baresip-demo/*.go
+go build -ldflags="-s -w" -o go-baresip-demo/go-baresip-demo-docker go-baresip-demo/*.go
 

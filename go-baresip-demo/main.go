@@ -24,7 +24,7 @@ func main() {
 
 	gb, err := gobaresip.New(
 		gobaresip.SetConfigPath("."),
-		gobaresip.SetAudioPath("./sounds"),
+		gobaresip.SetAudioPath("sounds"),
 		gobaresip.SetDebug(*debug),
 		gobaresip.SetWsAddr(*wsAddr),
 	)

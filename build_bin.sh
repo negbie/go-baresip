@@ -21,7 +21,7 @@ my_tls_modules="srtp"
 if [ ! -d "re" ]; then
     git clone https://github.com/baresip/re.git
 fi
-cd re; make clean; make libre.a; cp libre.a ../../re; cd ..
+cd re; make clean; make RELEASE=yes libre.a; cp libre.a ../../re; cd ..
 
 if [ ! -d "rem" ]; then
     git clone https://github.com/baresip/rem.git
@@ -43,7 +43,7 @@ cd baresip
 rm -rf modules/g722
 cp -ap ../../../g722 modules/
     
-make clean; make LIBRE_SO=../re LIBREM_PATH=../rem STATIC=1 libbaresip.a \
+make clean; make LIBRE_SO=../re LIBREM_PATH=../rem RELEASE=1 STATIC=1 libbaresip.a \
     MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_tls_modules"
 
 cp libbaresip.a ../../baresip; cd ..
