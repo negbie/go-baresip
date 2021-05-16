@@ -179,17 +179,21 @@ func (b *Baresip) connectCtrl() error {
 
 func (b *Baresip) read() {
 	for {
+		if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
+			break
+		}
+
 		msg, err := b.ctrlStream.readNetstring()
 		if err != nil {
 			log.Println(err)
-			return
-		}
-
-		if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
-			return
+			break
 		}
 
 		if bytes.Contains(msg, []byte("\"event\":true")) {
+			if bytes.Contains(msg, []byte(",end of file")) {
+				msg = bytes.Replace(msg, []byte("AUDIO_ERROR"), []byte("AUDIO_EOF"), 1)
+			}
+
 			var e EventMsg
 			e.RawJSON = msg
 
@@ -198,6 +202,7 @@ func (b *Baresip) read() {
 				log.Println(err, string(e.RawJSON))
 				continue
 			}
+
 			b.eventChan <- e
 			if b.wsAddr != "" {
 				select {
@@ -221,7 +226,15 @@ func (b *Baresip) read() {
 
 			if strings.HasPrefix(r.Token, "cmd_repeat") {
 				r.Ok = true
-				r.Data = fmt.Sprintf("%+v", b.autotest)
+				cb := false
+				if atomic.LoadUint32(&b.autotest.cancel) == 1 {
+					cb = true
+				}
+				r.Data = fmt.Sprintf("uris: %s; interval: %ds; cancel: %t",
+					b.autotest.uris,
+					atomic.LoadUint32(&b.autotest.interval),
+					cb,
+				)
 				rj, err := json.Marshal(r)
 				if err != nil {
 					log.Println(err, r.Data)
@@ -250,6 +263,7 @@ func appendByte(prefix []byte, suffix []byte) []byte {
 
 func (b *Baresip) Close() {
 	atomic.StoreUint32(&b.ctrlConnAlive, 0)
+	atomic.StoreUint32(&b.autotest.cancel, 1)
 	if b.ctrlConn != nil {
 		b.ctrlConn.Close()
 	}

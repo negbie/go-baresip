@@ -3,17 +3,13 @@ package main
 import (
 	"flag"
 	"log"
+	"strings"
 	"time"
 
 	gobaresip "github.com/negbie/go-baresip"
 )
 
-var staticlokiLabel = map[string]string{
-	"job": "go-baresip",
-}
-
 func main() {
-
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP server address")
 	wsAddr := flag.String("ws_address", "0.0.0.0:8080", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
@@ -37,8 +33,16 @@ func main() {
 	if lerr != nil {
 		log.Println(lerr)
 	}
-
 	defer loki.Close()
+
+	var lokiELabels = map[string]string{
+		"job":   "go-baresip",
+		"level": "info",
+	}
+	var lokiRLabels = map[string]string{
+		"job":   "go-baresip",
+		"level": "info",
+	}
 
 	eChan := gb.GetEventChan()
 	rChan := gb.GetResponseChan()
@@ -48,20 +52,39 @@ func main() {
 			select {
 			case e, ok := <-eChan:
 				if !ok {
-					continue
+					return
 				}
 				if lerr == nil {
-					loki.Send(staticlokiLabel, string(e.RawJSON))
+					cc := e.Type == "CALL_CLOSED"
+					if cc && e.ID == "" {
+						lokiELabels["level"] = "warning"
+					} else if cc && strings.HasPrefix(e.Param, "4") {
+						lokiELabels["level"] = "warning"
+					} else if cc && strings.HasPrefix(e.Param, "5") {
+						lokiELabels["level"] = "error"
+					} else if cc && strings.HasPrefix(e.Param, "6") {
+						lokiELabels["level"] = "error"
+					} else if cc && strings.Contains(e.Param, "error") {
+						lokiELabels["level"] = "error"
+					} else if strings.Contains(e.Type, "FAIL") {
+						lokiELabels["level"] = "warning"
+					} else if strings.Contains(e.Type, "ERROR") {
+						lokiELabels["level"] = "error"
+					} else {
+						lokiELabels["level"] = "info"
+					}
+
+					loki.Send(lokiELabels, string(e.RawJSON))
 				} else {
 					log.Println(string(e.RawJSON))
 				}
 
 			case r, ok := <-rChan:
 				if !ok {
-					continue
+					return
 				}
 				if lerr == nil {
-					loki.Send(staticlokiLabel, string(r.RawJSON))
+					loki.Send(lokiRLabels, string(r.RawJSON))
 				} else {
 					log.Println(string(r.RawJSON))
 				}
@@ -72,7 +95,6 @@ func main() {
 	go func() {
 		// Give baresip some time to init and register ua
 		time.Sleep(1 * time.Second)
-
 		if *repeatDial != "" {
 			if err := gb.CmdRepeatDialInterval(*repeatDialInterval); err != nil {
 				log.Println(err)

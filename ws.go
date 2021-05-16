@@ -169,7 +169,7 @@ func (h *wsHub) run() {
 			}
 		case e, ok := <-h.bs.eventWsChan:
 			if !ok {
-				continue
+				return
 			}
 			for client := range h.clients {
 				select {
@@ -181,7 +181,7 @@ func (h *wsHub) run() {
 			}
 		case r, ok := <-h.bs.responseWsChan:
 			if !ok {
-				continue
+				return
 			}
 			for client := range h.clients {
 				select {
@@ -275,7 +275,7 @@ window.onload = function () {
 <tr><td valign="top" width="20%">
 <form id="form">
     <input type="text" id="msg" size="45" autofocus placeholder="Please enter one of the below commands here"><br>
-    <input type="text" id="filter" size="45" placeholder="Text to filter events"><br>
+    <input type="text" id="filter" size="45" placeholder="Optional text to filter messages"><br>
     <input type="submit" value="Enter"><br>
 </form>
 

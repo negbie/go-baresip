@@ -277,11 +277,12 @@ func (b *Baresip) CmdQuit() error {
 }
 
 func (b *Baresip) CmdWs(raw []byte) error {
-	m := strings.Split(string(bytes.ToLower(bytes.TrimSpace(raw))), " ")
+	m := strings.Split(string(bytes.TrimSpace(raw)), " ")
 	if len(m) < 1 {
 		return nil
 	}
 
+	m[0] = strings.ToLower(m[0])
 	if m[0] == "quit" {
 		return nil
 	} else if m[0] == "line" {
@@ -335,7 +336,7 @@ func (b *Baresip) CmdRepeatDialInfo() error {
 
 func (b *Baresip) CmdRepeatDialInterval(n int) error {
 	if n < 5 {
-		return nil
+		n = 5
 	}
 	atomic.StoreUint32(&b.autotest.interval, uint32(n))
 	return b.Cmd("repeatdialinfo", "", "cmd_repeatdialinterval")
