@@ -287,9 +287,10 @@ window.onload = function () {
 <p>aubitrate ..          Set audio bitrate
 <p>audio_debug           Audio stream
 <p>ausrc ..              Switch audio source
+<p>autocmdinfo           Show auto dial and auto hangup info
 <p>autodialadd ..        Add auto dial number
 <p>autodialdel ..        Delete auto dial number
-<p>autodialinfo          Show auto dial info
+<p>autohangupgap ..      Set auto hangup gap duration
 <p>callfind ..           Find call
 <p>callstat              Call status
 <p>contact_next          Set next contact

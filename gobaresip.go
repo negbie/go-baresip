@@ -114,14 +114,14 @@ type Baresip struct {
 	responseWsChan chan []byte
 	eventWsChan    chan []byte
 	ctrlStream     *reader
-	autotest       at
+	autoCmd        ac
 }
 
-type at struct {
-	mux    sync.RWMutex
-	num    map[string]int
-	cutDir uint32
-	cutGap uint32
+type ac struct {
+	mux sync.RWMutex
+	num map[string]int
+
+	hangupGap uint32
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -139,8 +139,7 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		b.userAgent = "go-baresip"
 	}
 
-	b.autotest.num = make(map[string]int)
-	atomic.StoreUint32(&b.autotest.cutGap, 60)
+	b.autoCmd.num = make(map[string]int)
 
 	if b.wsAddr != "" {
 		b.responseWsChan = make(chan []byte, 100)
@@ -227,10 +226,27 @@ func (b *Baresip) read() {
 				continue
 			}
 
-			if strings.HasPrefix(r.Token, "cmd_autodial") {
+			if strings.HasPrefix(r.Token, "cmd_dial") {
+				if d := atomic.LoadUint32(&b.autoCmd.hangupGap); d > 0 {
+					if id := findID([]byte(r.Data)); len(id) > 1 {
+						go func() {
+							time.Sleep(time.Duration(d) * time.Second)
+							b.CmdHangupID(id)
+						}()
+					}
+				}
+			}
+
+			if strings.HasPrefix(r.Token, "cmd_auto") {
 				r.Ok = true
-				r.Data = fmt.Sprintf("%v", b.autotest.num)
+				b.autoCmd.mux.RLock()
+				r.Data = fmt.Sprintf("Dial%v;Hangupgap=%d",
+					b.autoCmd.num,
+					atomic.LoadUint32(&b.autoCmd.hangupGap),
+				)
+				b.autoCmd.mux.RUnlock()
 				r.Data = strings.Replace(r.Data, " ", ",", -1)
+				r.Data = strings.Replace(r.Data, ":", ";autodialgap=", -1)
 				rj, err := json.Marshal(r)
 				if err != nil {
 					log.Println(err, r.Data)
@@ -255,6 +271,16 @@ func appendByte(prefix []byte, suffix []byte) []byte {
 	n := copy(b, prefix)
 	copy(b[n:], suffix)
 	return b
+}
+
+func findID(data []byte) string {
+	if posA := bytes.Index(data, []byte("call id: ")); posA > 0 {
+		if posB := bytes.Index(data[posA:], []byte("\n")); posB > 0 {
+			l := len("call id: ")
+			return string(data[posA+l : posA+posB])
+		}
+	}
+	return ""
 }
 
 func (b *Baresip) Close() {

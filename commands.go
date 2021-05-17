@@ -277,11 +277,7 @@ func (b *Baresip) CmdWs(raw []byte) error {
 	}
 
 	m[0] = strings.ToLower(m[0])
-	if m[0] == "quit" {
-		return nil
-	} else if m[0] == "line" {
-		return nil
-	} else if m[0] == "uadelall" {
+	if m[0] == "quit" || m[0] == "uadelall" {
 		return nil
 	}
 
@@ -289,8 +285,10 @@ func (b *Baresip) CmdWs(raw []byte) error {
 		b.CmdAutodialadd(m[1])
 	} else if len(m) == 2 && m[0] == "autodialdel" {
 		b.CmdAutodialdel(m[1])
-	} else if m[0] == "autodialinfo" {
-		b.CmdAutodialinfo()
+	} else if len(m) == 2 && m[0] == "autohangupgap" {
+		b.CmdAutohangupgap(m[1])
+	} else if m[0] == "autocmdinfo" {
+		b.CmdAutocmdinfo()
 	} else if len(m) == 1 {
 		b.Cmd(m[0], "", "cmd_"+m[0])
 	} else if len(m) == 2 {
@@ -312,20 +310,20 @@ func (b *Baresip) CmdAutodialadd(s string) error {
 	in := strings.Split(cutSpace(s), ",")
 	for _, v := range in {
 		gap := 60
-		parts := strings.Split(v, ":::")
+		parts := strings.Split(v, ";autodialgap=")
 		if len(parts) == 2 {
 			if g, err := strconv.Atoi(parts[1]); err == nil {
 				gap = g
 			}
 		}
 
-		b.autotest.mux.RLock()
-		_, ok := b.autotest.num[parts[0]]
-		b.autotest.mux.RUnlock()
+		b.autoCmd.mux.RLock()
+		_, ok := b.autoCmd.num[parts[0]]
+		b.autoCmd.mux.RUnlock()
 		if !ok {
-			b.autotest.mux.Lock()
-			b.autotest.num[parts[0]] = gap
-			b.autotest.mux.Unlock()
+			b.autoCmd.mux.Lock()
+			b.autoCmd.num[parts[0]] = gap
+			b.autoCmd.mux.Unlock()
 			go b.autoDialSchedule(parts[0], gap)
 		}
 	}
@@ -341,9 +339,9 @@ func (b *Baresip) autoDialSchedule(num string, gap int) {
 	defer tick.Stop()
 
 	for ; true; <-tick.C {
-		b.autotest.mux.RLock()
-		_, ok := b.autotest.num[num]
-		b.autotest.mux.RUnlock()
+		b.autoCmd.mux.RLock()
+		_, ok := b.autoCmd.num[num]
+		b.autoCmd.mux.RUnlock()
 		if !ok {
 			return
 		}
@@ -351,18 +349,29 @@ func (b *Baresip) autoDialSchedule(num string, gap int) {
 	}
 }
 
-func (b *Baresip) CmdAutodialinfo() error {
-	return b.Cmd("autodialinfo", "", "cmd_autodialinfo")
-}
-
 func (b *Baresip) CmdAutodialdel(s string) error {
 	data := strings.Split(cutSpace(s), ",")
 	for _, d := range data {
-		parts := strings.Split(d, ":::")
-		b.autotest.mux.Lock()
-		delete(b.autotest.num, parts[0])
-		b.autotest.mux.Unlock()
+		parts := strings.Split(d, ";autodialgap=")
+		b.autoCmd.mux.Lock()
+		delete(b.autoCmd.num, parts[0])
+		b.autoCmd.mux.Unlock()
 	}
 
 	return b.Cmd("autodialinfo", "", "cmd_autodialdel")
+}
+
+func (b *Baresip) CmdAutohangupgap(s string) error {
+	if n, err := strconv.Atoi(s); err == nil {
+		if n < 0 {
+			n = 0
+		}
+		atomic.StoreUint32(&b.autoCmd.hangupGap, uint32(n))
+	}
+
+	return b.Cmd("autodialinfo", "", "cmd_autohangupgap")
+}
+
+func (b *Baresip) CmdAutocmdinfo() error {
+	return b.Cmd("autodialinfo", "", "cmd_autocmdinfo")
 }
