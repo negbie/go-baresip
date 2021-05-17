@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode"
 )
 
 /*
@@ -19,13 +20,6 @@ import (
   /audio_debug            A        Audio stream
   /auplay ..                       Switch audio player
   /ausrc ..                        Switch audio source
-  /autodial ..                     Set auto dial command
-  /autodialcancel                  Cancel auto dial
-  /autodialdelay ..                Set delay before auto dial [ms]
-  /autohangup ..                   Set auto hangup command
-  /autohangupcancel                Cancel auto hangup
-  /autohangupdelay ..              Set delay before hangup [ms]
-  /autostat                        Print autotest status
   /callfind ..                     Find call
   /callstat               c        Call status
   /contact_next           >        Set next contact
@@ -291,16 +285,12 @@ func (b *Baresip) CmdWs(raw []byte) error {
 		return nil
 	}
 
-	if len(m) == 2 && m[0] == "repeatdial" {
-		b.CmdRepeatDial(m[1])
-	} else if len(m) == 2 && m[0] == "repeatdialinterval" {
-		if n, err := strconv.Atoi(m[1]); err == nil {
-			b.CmdRepeatDialInterval(n)
-		}
-	} else if m[0] == "repeatdialcancel" {
-		b.CmdRepeatDialCancel()
-	} else if m[0] == "repeatdialinfo" {
-		b.CmdRepeatDialInfo()
+	if len(m) == 2 && m[0] == "autodialadd" {
+		b.CmdAutodialadd(m[1])
+	} else if len(m) == 2 && m[0] == "autodialdel" {
+		b.CmdAutodialdel(m[1])
+	} else if m[0] == "autodialinfo" {
+		b.CmdAutodialinfo()
 	} else if len(m) == 1 {
 		b.Cmd(m[0], "", "cmd_"+m[0])
 	} else if len(m) == 2 {
@@ -309,42 +299,70 @@ func (b *Baresip) CmdWs(raw []byte) error {
 	return nil
 }
 
-func (b *Baresip) CmdRepeatDial(s string) error {
-	b.autotest.uris += s + ","
-	uris := strings.Split(s, ",")
-	atomic.StoreUint32(&b.autotest.cancel, 0)
-
-	go func(u []string) {
-		for {
-			for _, v := range u {
-				if atomic.LoadUint32(&b.autotest.cancel) == 1 {
-					return
-				}
-				b.CmdDial(strings.TrimSpace(v))
-			}
-			d := int(atomic.LoadUint32(&b.autotest.interval))
-			time.Sleep(time.Duration(d) * time.Second)
+func cutSpace(str string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
 		}
-	}(uris)
-
-	return b.Cmd("repeatdialinfo", "", "cmd_repeatdial")
+		return r
+	}, str)
 }
 
-func (b *Baresip) CmdRepeatDialInfo() error {
-	return b.Cmd("repeatdialinfo", "", "cmd_repeatdialinfo")
-}
+func (b *Baresip) CmdAutodialadd(s string) error {
+	in := strings.Split(cutSpace(s), ",")
+	for _, v := range in {
+		gap := 60
+		parts := strings.Split(v, ":::")
+		if len(parts) == 2 {
+			if g, err := strconv.Atoi(parts[1]); err == nil {
+				gap = g
+			}
+		}
 
-func (b *Baresip) CmdRepeatDialInterval(n int) error {
-	if n < 5 {
-		n = 5
+		b.autotest.mux.RLock()
+		_, ok := b.autotest.num[parts[0]]
+		b.autotest.mux.RUnlock()
+		if !ok {
+			b.autotest.mux.Lock()
+			b.autotest.num[parts[0]] = gap
+			b.autotest.mux.Unlock()
+			go b.autoDialSchedule(parts[0], gap)
+		}
 	}
-	atomic.StoreUint32(&b.autotest.interval, uint32(n))
-	return b.Cmd("repeatdialinfo", "", "cmd_repeatdialinterval")
+
+	return b.Cmd("autodialinfo", "", "cmd_autodialadd")
 }
 
-func (b *Baresip) CmdRepeatDialCancel() error {
-	atomic.StoreUint32(&b.autotest.cancel, 1)
-	b.autotest.uris = ""
-	b.CmdHangupall("all")
-	return b.Cmd("repeatdialinfo", "", "cmd_repeatdialcancel")
+func (b *Baresip) autoDialSchedule(num string, gap int) {
+	if gap < 1 {
+		return
+	}
+	tick := time.NewTicker(time.Duration(gap) * time.Second)
+	defer tick.Stop()
+
+	for ; true; <-tick.C {
+		b.autotest.mux.RLock()
+		_, ok := b.autotest.num[num]
+		b.autotest.mux.RUnlock()
+		if !ok {
+			return
+		}
+		b.CmdDial(num)
+	}
+}
+
+func (b *Baresip) CmdAutodialinfo() error {
+	return b.Cmd("autodialinfo", "", "cmd_autodialinfo")
+}
+
+func (b *Baresip) CmdAutodialdel(s string) error {
+	data := strings.Split(cutSpace(s), ",")
+	for _, d := range data {
+		parts := strings.Split(d, ":::")
+		b.autotest.mux.Lock()
+		delete(b.autotest.num, parts[0])
+		b.autotest.mux.Unlock()
+	}
+
+	return b.Cmd("autodialinfo", "", "cmd_autodialdel")
 }

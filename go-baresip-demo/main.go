@@ -13,8 +13,7 @@ func main() {
 	lokiServer := flag.String("loki_server", "http://localhost:3100", "Loki HTTP server address")
 	wsAddr := flag.String("ws_address", "0.0.0.0:8080", "Loki HTTP server address")
 	dial := flag.String("dial", "", "Dial SIP URI if it's not empty")
-	repeatDial := flag.String("repeat_dial", "", "Repeat dial SIP URI if it's not empty")
-	repeatDialInterval := flag.Int("repeat_dial_interval", 30, "Set repeat dial interval [s]")
+	autoDialAdd := flag.String("auto_dial_add", "", "Add auto dial SIP URI if it's not empty")
 	debug := flag.Bool("debug", false, "Set debug mode")
 	flag.Parse()
 
@@ -95,11 +94,8 @@ func main() {
 	go func() {
 		// Give baresip some time to init and register ua
 		time.Sleep(1 * time.Second)
-		if *repeatDial != "" {
-			if err := gb.CmdRepeatDialInterval(*repeatDialInterval); err != nil {
-				log.Println(err)
-			}
-			if err := gb.CmdRepeatDial(*repeatDial); err != nil {
+		if *autoDialAdd != "" {
+			if err := gb.CmdAutodialadd(*autoDialAdd); err != nil {
 				log.Println(err)
 			}
 		} else if *dial != "" {

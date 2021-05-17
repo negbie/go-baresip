@@ -287,6 +287,9 @@ window.onload = function () {
 <p>aubitrate ..          Set audio bitrate
 <p>audio_debug           Audio stream
 <p>ausrc ..              Switch audio source
+<p>autodialadd ..        Add auto dial number
+<p>autodialdel ..        Delete auto dial number
+<p>autodialinfo          Show auto dial info
 <p>callfind ..           Find call
 <p>callstat              Call status
 <p>contact_next          Set next contact
@@ -305,10 +308,6 @@ window.onload = function () {
 <p>mute                  Call mute/un-mute
 <p>reginfo               Registration info
 <p>reinvite              Send re-INVITE
-<p>repeatdial ..         Set repeat dial
-<p>repeatdialcancel      Cancel repeat dial
-<p>repeatdialinterval .. Set repeat dial interval [s]
-<p>repeatdialinfo        Print repeat dial info
 <p>resume                Call resume
 <p>setadelay ..          Set answer delay for outgoing call
 <p>sndcode ..            Send Code

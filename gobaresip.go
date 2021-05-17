@@ -70,6 +70,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -117,9 +118,10 @@ type Baresip struct {
 }
 
 type at struct {
-	uris     string
-	cancel   uint32
-	interval uint32
+	mux    sync.RWMutex
+	num    map[string]int
+	cutDir uint32
+	cutGap uint32
 }
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
@@ -133,11 +135,12 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
-	atomic.StoreUint32(&b.autotest.interval, 30)
-
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
 	}
+
+	b.autotest.num = make(map[string]int)
+	atomic.StoreUint32(&b.autotest.cutGap, 60)
 
 	if b.wsAddr != "" {
 		b.responseWsChan = make(chan []byte, 100)
@@ -224,17 +227,10 @@ func (b *Baresip) read() {
 				continue
 			}
 
-			if strings.HasPrefix(r.Token, "cmd_repeat") {
+			if strings.HasPrefix(r.Token, "cmd_autodial") {
 				r.Ok = true
-				cb := false
-				if atomic.LoadUint32(&b.autotest.cancel) == 1 {
-					cb = true
-				}
-				r.Data = fmt.Sprintf("uris: %s; interval: %ds; cancel: %t",
-					b.autotest.uris,
-					atomic.LoadUint32(&b.autotest.interval),
-					cb,
-				)
+				r.Data = fmt.Sprintf("%v", b.autotest.num)
+				r.Data = strings.Replace(r.Data, " ", ",", -1)
 				rj, err := json.Marshal(r)
 				if err != nil {
 					log.Println(err, r.Data)
@@ -263,7 +259,6 @@ func appendByte(prefix []byte, suffix []byte) []byte {
 
 func (b *Baresip) Close() {
 	atomic.StoreUint32(&b.ctrlConnAlive, 0)
-	atomic.StoreUint32(&b.autotest.cancel, 1)
 	if b.ctrlConn != nil {
 		b.ctrlConn.Close()
 	}
@@ -283,6 +278,9 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 
 func (b *Baresip) keepActive() {
 	for {
+		if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
+			break
+		}
 		time.Sleep(1 * time.Second)
 		b.Cmd("listcalls", "", "keep_active_ping")
 	}
