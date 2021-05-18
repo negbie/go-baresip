@@ -2,9 +2,6 @@ accounts
 contacts
 current_contact
 uuid
-speaker.wav
-go-baresip-demo/go-baresip-demo
-go-baresip-demo/go-baresip-demo-docker
 libbaresip/git
 espeak/espeak-ng
 espeak/soxr-code

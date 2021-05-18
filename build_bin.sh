@@ -2,7 +2,8 @@
 
 set -ex
 
-#sudo apt install -y make gcc zlib1g-dev libssl-dev openssl git wget
+#sudo apt update
+#sudo apt install -y autoconf automake libtool pkg-config make cmake gcc zlib1g-dev libssl-dev openssl git wget
 
 mkdir -p libbaresip
 cd libbaresip/
