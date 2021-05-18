@@ -10,7 +10,7 @@ mkdir -p re
 mkdir -p rem
 mkdir -p baresip
 mkdir -p opus/include
-mkdir -p openssl/include/openssl
+mkdir -p openssl/include
 
 my_base_modules="account contact cons ctrl_tcp debug_cmd httpd menu ice stun turn serreg uuid stdio"
 my_audio_modules="aubridge aufile auloop"
@@ -38,7 +38,8 @@ if [ ! -d "openssl-${openssl}" ]; then
 fi
 cd openssl-${openssl}; ./config no-shared; make clean; make -j4 build_libs; cd ..
 cp openssl-${openssl}/*.a ../openssl
-cp openssl-${openssl}/include/openssl/*.h ../openssl/include/openssl
+cp openssl-${openssl}/include/openssl/*.h ../openssl/include
+sed -ri 's/<openssl\/(.*)>/"\1"/g' ../openssl/include/*
 
 if [ ! -d "opus-${opus}" ]; then
     wget "http://downloads.xiph.org/releases/opus/opus-${opus}.tar.gz"

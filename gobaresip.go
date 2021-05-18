@@ -11,13 +11,12 @@ package gobaresip
 
 #include <stdint.h>
 #include <stdlib.h>
-#cgo linux CFLAGS: -I libbaresip -I libbaresip/openssl/include
-#include <re/include/re.h>
-#include <rem/include/rem.h>
-#include <baresip/include/baresip.h>
-#include <opus/include/opus.h>
-#include <openssl/ssl.h>
-#include <openssl/crypto.h>
+#include <libbaresip/re/include/re.h>
+#include <libbaresip/rem/include/rem.h>
+#include <libbaresip/baresip/include/baresip.h>
+#include <libbaresip/opus/include/opus.h>
+#include <libbaresip/openssl/include/ssl.h>
+#include <libbaresip/openssl/include/crypto.h>
 
 
 static void signal_handler(int sig)
