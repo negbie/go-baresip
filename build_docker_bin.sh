@@ -3,51 +3,75 @@
 # sudo docker run --rm=true -itv $PWD:/mnt debian:buster-slim /mnt/build_docker_bin.sh
 
 set -ex
-
+cd /mnt
 apt update
 apt install -y autoconf automake libtool pkg-config make cmake gcc zlib1g-dev libssl-dev openssl git wget
 
-cd /mnt
-rm -rf libbaresip
-rm -f go-baresip
-mkdir libbaresip
+mkdir -p libbaresip
 cd libbaresip/
-mkdir git
-mkdir re
-mkdir rem
-mkdir baresip
-cd git
+mkdir -p git
+mkdir -p re
+mkdir -p rem
+mkdir -p baresip
+mkdir -p opus/include
+mkdir -p openssl/include
 
-my_base_modules="account contact autotest cons ctrl_tcp debug_cmd httpd menu ice stun turn serreg uuid stdio"
+my_base_modules="account contact cons ctrl_tcp debug_cmd httpd menu ice stun turn serreg uuid stdio"
 my_audio_modules="aubridge aufile auloop"
-my_codec_modules="g711 g722"
+my_codec_modules="g711 g722 opus"
 my_tls_modules="srtp"
 
-git clone https://github.com/baresip/re.git
-cd re; make RELEASE=yes libre.a; cp libre.a ../../re; cd ..
+opus="1.3.1"
+openssl="1.1.1k"
 
-git clone https://github.com/baresip/rem.git
-cd rem; make librem.a; cp librem.a ../../rem; cd ..
+cd git
 
-git clone https://github.com/baresip/baresip.git
-git clone https://github.com/baresip/baresip-apps.git
+if [ ! -d "re" ]; then
+    git clone https://github.com/baresip/re.git
+fi
+cd re; make clean; make USE_ZLIB= RELEASE=1 libre.a; cp libre.a ../../re; cd ..
 
-mv baresip-apps/modules/autotest baresip/modules/
-sed -i 's/$(BARESIP_MOD_MK)/mk\/mod.mk/g' baresip/modules/autotest/module.mk
-sed -i '/auloop/a MODULES   += autotest' baresip/mk/modules.mk
+if [ ! -d "rem" ]; then
+    git clone https://github.com/baresip/rem.git
+fi
+cd rem; make clean; make USE_ZLIB= RELEASE=1 librem.a; cp librem.a ../../rem; cd ..
 
+if [ ! -d "openssl-${openssl}" ]; then
+    wget https://www.openssl.org/source/openssl-${openssl}.tar.gz
+    tar -xzf openssl-${openssl}.tar.gz
+fi
+cd openssl-${openssl}; ./config no-shared; make clean; make -j4 build_libs; cd ..
+mkdir openssl
+mkdir -p my_include/openssl
+cp openssl-${openssl}/*.a ../openssl; cp openssl-${openssl}/*.a openssl
+cp openssl-${openssl}/include/openssl/*.h ../openssl/include; cp openssl-${openssl}/include/openssl/*.h my_include/openssl
+
+if [ ! -d "opus-${opus}" ]; then
+    wget "http://downloads.xiph.org/releases/opus/opus-${opus}.tar.gz"
+    tar -xzf opus-${opus}.tar.gz
+fi
+cd opus-${opus}; ./configure; make clean; make -j4; cd ..
+mkdir opus
+mkdir -p my_include/opus
+cp opus-${opus}/.libs/libopus.a ../opus; cp opus-${opus}/.libs/libopus.a opus
+cp opus-${opus}/include/*.h ../opus/include; cp opus-${opus}/include/*.h my_include/opus
+
+if [ ! -d "baresip" ]; then
+    git clone https://github.com/baresip/baresip.git
+fi
 cd baresip
 rm -rf modules/g722
 cp -ap ../../../g722 modules/
-    
-make LIBRE_SO=../re LIBREM_PATH=../rem RELEASE=1 STATIC=1 libbaresip.a \
-    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_tls_modules"
+
+make clean; make -j4 LIBRE_SO=../re LIBREM_PATH=../rem USE_ZLIB= RELEASE=1 STATIC=1 libbaresip.a \
+    MODULES="$my_base_modules $my_audio_modules $my_codec_modules $my_tls_modules" \
+    EXTRA_CFLAGS="-I ../my_include" EXTRA_LFLAGS="-L ..opus"
 
 cp libbaresip.a ../../baresip; cd ..
-mv re/include ../re
-mv rem/include ../rem
-mv baresip/include ../baresip
-cd ..; rm -rf git; cd ..
+cp -R re/include ../re
+cp -R rem/include ../rem
+cp -R baresip/include ../baresip
+cd ../..
 
 cd espeak
 if [ ! -d "espeak-ng" ]; then
@@ -61,8 +85,6 @@ cp src/.libs/libespeak-ng.a ../
 cp src/include/espeak-ng/speak_lib.h ../
 make clean
 cd ..
-rm -rf espeak-ng
-cd ..
 
 if [ ! -d "soxr-code" ]; then
     git clone https://git.code.sf.net/p/soxr/code soxr-code
@@ -70,9 +92,6 @@ fi
 cd soxr-code
 cmake -DWITH_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0 .
 make
-cp src/libsoxr.a src/soxr.h ../espeak
+cp src/libsoxr.a src/soxr.h ../
 make clean
 cd ..
-rm -rf soxr-code
-cd ..
-

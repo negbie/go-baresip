@@ -2,13 +2,22 @@ package gobaresip
 
 /*
 #cgo linux CFLAGS: -I.
-#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/baresip/libbaresip.a ${SRCDIR}/libbaresip/re/libre.a ${SRCDIR}/libbaresip/rem/librem.a -ldl -lm -lcrypto -lssl -lz
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/baresip/libbaresip.a
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/re/libre.a
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/rem/librem.a
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/opus/libopus.a
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libssl.a
+#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libcrypto.a
+#cgo linux LDFLAGS: -ldl -lm
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <libbaresip/re/include/re.h>
 #include <libbaresip/rem/include/rem.h>
 #include <libbaresip/baresip/include/baresip.h>
+#include <libbaresip/opus/include/opus.h>
+#include <libbaresip/openssl/include/ssl.h>
+#include <libbaresip/openssl/include/crypto.h>
 
 
 static void signal_handler(int sig)
