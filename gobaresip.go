@@ -16,8 +16,8 @@ package gobaresip
 #include <libbaresip/rem/include/rem.h>
 #include <libbaresip/baresip/include/baresip.h>
 #include <libbaresip/opus/include/opus.h>
-#include <libbaresip/openssl/include/ssl.h>
-#include <libbaresip/openssl/include/crypto.h>
+#include <libbaresip/openssl/include/openssl/ssl.h>
+#include <libbaresip/openssl/include/openssl/crypto.h>
 
 
 static void signal_handler(int sig)
