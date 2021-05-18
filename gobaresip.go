@@ -126,7 +126,6 @@ type ac struct {
 
 func New(options ...func(*Baresip) error) (*Baresip, error) {
 	b := &Baresip{
-		ctrlAddr:     "127.0.0.1:4444",
 		responseChan: make(chan ResponseMsg, 100),
 		eventChan:    make(chan EventMsg, 100),
 	}
@@ -135,6 +134,15 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
+	if b.audioPath == "" {
+		b.audioPath = "."
+	}
+	if b.configPath == "" {
+		b.configPath = "."
+	}
+	if b.ctrlAddr == "" {
+		b.ctrlAddr = "127.0.0.1:4444"
+	}
 	if b.userAgent == "" {
 		b.userAgent = "go-baresip"
 	}
