@@ -221,6 +221,7 @@ window.onload = function () {
     }
 
     document.getElementById("form").onsubmit = function () {
+		log.scrollTop = log.scrollHeight;
         if (!conn) {
             return false;
         }
