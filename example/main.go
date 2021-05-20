@@ -9,10 +9,13 @@ import (
 
 func main() {
 
-	gb, err := gobaresip.New(gobaresip.SetConfigPath("."))
+	gb, err := gobaresip.New(
+		gobaresip.SetAudioPath("sounds"),
+		gobaresip.SetConfigPath("."),
+		gobaresip.SetWsAddr("0.0.0.0:8080"),
+	)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	eChan := gb.GetEventChan()
@@ -25,12 +28,12 @@ func main() {
 				if !ok {
 					continue
 				}
-				log.Println(e)
+				log.Println(string(e.RawJSON))
 			case r, ok := <-rChan:
 				if !ok {
 					continue
 				}
-				log.Println(r)
+				log.Println(string(r.RawJSON))
 			}
 		}
 	}()

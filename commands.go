@@ -271,7 +271,7 @@ func (b *Baresip) CmdQuit() error {
 }
 
 func (b *Baresip) CmdWs(raw []byte) error {
-	m := strings.Split(string(bytes.TrimSpace(raw)), " ")
+	m := strings.SplitN(string(bytes.TrimSpace(bytes.Join(bytes.Fields(raw), []byte(" ")))), " ", 2)
 	if len(m) < 1 {
 		return nil
 	}
