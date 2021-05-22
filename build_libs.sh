@@ -12,10 +12,10 @@ mkdir -p baresip
 mkdir -p opus/include
 mkdir -p openssl/include
 
-my_base_modules="account b2bua contact cons ctrl_tcp debug_cmd echo httpd menu natpmp ice stun turn rtcpsummary serreg uuid stdio"
-my_audio_modules="aubridge aufile auloop mixausrc"
+my_base_modules="account b2bua contact cons ctrl_tcp debug_cmd echo httpd menu natpmp ice stun turn serreg uuid stdio"
+my_audio_modules="aubridge aufile auloop"
 my_codec_modules="g711 g722 opus"
-my_tls_modules="srtp"
+my_tls_modules="dtls_srtp srtp"
 
 opus="1.3.1"
 openssl="1.1.1k"
