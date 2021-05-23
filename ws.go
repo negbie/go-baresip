@@ -207,10 +207,28 @@ var homeTemplate = template.Must(template.New("").Parse(`
 <head>
 <meta charset="utf-8">
 <script type="text/javascript">
+
+function simpleSearch() {
+    var input = document.getElementById("search");
+    if (input.length < 1) {
+        return;
+    }
+    var filter = input.value.toLowerCase();
+    var nodes = document.getElementsByClassName('list');
+  
+    for (i = 0; i < nodes.length; i++) {
+        if (nodes[i].innerText.toLowerCase().includes(filter)) {
+            nodes[i].style.display = "block";
+        } else {
+            nodes[i].style.display = "none";
+        }
+    }
+}
+
 window.onload = function () {
     var conn;
-    var msg = document.getElementById("msg");
-    var log = document.getElementById("log");
+    var msg = document.getElementById("command");
+    var log = document.getElementById("output");
 
     function appendLog(item) {
         var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
@@ -221,13 +239,14 @@ window.onload = function () {
     }
 
     document.getElementById("form").onsubmit = function () {
-		log.scrollTop = log.scrollHeight;
+        log.scrollTop = log.scrollHeight;
         if (!conn) {
             return false;
         }
         if (!msg.value) {
             return false;
         }
+        simpleSearch();
         conn.send(msg.value);
         msg.value = "";
         return false;
@@ -241,17 +260,14 @@ window.onload = function () {
             appendLog(item);
         };
         conn.onmessage = function (evt) {
-            var filter = document.getElementById("filter");
             var messages = evt.data.split('\n');
             for (var i = 0; i < messages.length; i++) {
                 if (messages[i].length < 10) {
                     continue;
                 }
-                if (!messages[i].includes(filter.value)) {
-                    continue;
-                }
 
                 var item = document.createElement("div");
+                item.classList.add('list');
                 var j = JSON.parse(messages[i]);
                 var d = new Date().toLocaleString()
                 j["time"] = d;
@@ -259,7 +275,9 @@ window.onload = function () {
                     j["data"] = j["data"].trim().replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
                 }
                 item.innerText = JSON.stringify(j, undefined, 2);
+                
                 appendLog(item);
+                simpleSearch();
             }
         };
     } else {
@@ -275,8 +293,8 @@ window.onload = function () {
 <table border="1">
 <tr><td valign="top" width="20%">
 <form id="form">
-    <input type="text" id="msg" size="45" autofocus placeholder="Please enter one of the below commands here"><br>
-    <input type="text" id="filter" size="45" placeholder="Optional text to filter messages"><br>
+    <input type="text" id="command" size="60" autofocus placeholder="Please enter one of the below commands here"><br>
+    <input type="text" id="search" size="60" onkeyup="simpleSearch()" placeholder="Please type a search term here"><br>
     <input type="submit" value="Enter"><br>
 </form>
 
@@ -323,7 +341,7 @@ window.onload = function () {
 
 </td><td valign="top" width="80%">
 <pre>
-<div id="log" style="line-height: 1.7;max-height: 85vh;overflow-y: scroll;"></div>
+<div id="output" class="list" style="line-height: 1.7;max-height: 85vh;overflow-y: scroll;"></div>
 </pre>
 </td></tr></table>
 </body>

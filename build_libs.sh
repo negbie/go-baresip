@@ -42,7 +42,7 @@ cp openssl-${openssl}/include/openssl/*.h ../openssl/include
 sed -ri 's/<openssl\/(.*)>/"\1"/g' ../openssl/include/*
 
 if [ ! -d "opus-${opus}" ]; then
-    wget "http://downloads.xiph.org/releases/opus/opus-${opus}.tar.gz"
+    wget "https://archive.mozilla.org/pub/opus/opus-${opus}.tar.gz"
     tar -xzf opus-${opus}.tar.gz
 fi
 cd opus-${opus}; ./configure; make clean; make -j4; cd ..
