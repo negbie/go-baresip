@@ -227,6 +227,7 @@ const char   *call_id(const struct call *call);
 const char   *call_peeruri(const struct call *call);
 const char   *call_peername(const struct call *call);
 const char   *call_localuri(const struct call *call);
+const char   *call_alerturi(const struct call *call);
 struct audio *call_audio(const struct call *call);
 struct video *call_video(const struct call *call);
 struct list  *call_streaml(const struct call *call);
@@ -853,6 +854,7 @@ int  ua_call_alloc(struct call **callp, struct ua *ua,
 		   bool use_rtp);
 struct call *ua_find_call_state(const struct ua *ua, enum call_state st);
 int ua_raise(struct ua *ua);
+int ua_set_autoanswer_value(struct ua *ua, const char *value);
 
 
 /* One instance */
@@ -1465,33 +1467,6 @@ int  sdp_fingerprint_decode(const char *attr, struct pl *hash,
 
 int sip_req_send(struct ua *ua, const char *method, const char *uri,
 		 sip_resp_h *resph, void *arg, const char *fmt, ...);
-
-
-/*
- * H.264
- */
-
-
-/** Fragmentation Unit header */
-struct h264_fu {
-	unsigned s:1;      /**< Start bit                               */
-	unsigned e:1;      /**< End bit                                 */
-	unsigned r:1;      /**< The Reserved bit MUST be equal to 0     */
-	unsigned type:5;   /**< The NAL unit payload type               */
-};
-
-int h264_fu_hdr_encode(const struct h264_fu *fu, struct mbuf *mb);
-int h264_fu_hdr_decode(struct h264_fu *fu, struct mbuf *mb);
-
-const uint8_t *h264_find_startcode(const uint8_t *p, const uint8_t *end);
-
-int h264_packetize(uint64_t rtp_ts, const uint8_t *buf, size_t len,
-		   size_t pktsize, videnc_packet_h *pkth, void *arg);
-int h264_nal_send(bool first, bool last,
-		  bool marker, uint32_t ihdr, uint64_t rtp_ts,
-		  const uint8_t *buf, size_t size, size_t maxsz,
-		  videnc_packet_h *pkth, void *arg);
-bool h264_is_keyframe(int type);
 
 
 /*
