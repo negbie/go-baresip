@@ -5,7 +5,6 @@ package gobaresip
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/re/libre.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/rem/librem.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/opus/libopus.a
-#cgo linux LDFLAGS: ${SRCDIR}/libbaresip/alsa/libasound.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libssl.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libcrypto.a
 #cgo linux LDFLAGS: -ldl -lm
