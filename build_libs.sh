@@ -13,7 +13,7 @@ mkdir -p opus
 mkdir -p openssl
 
 my_base_modules="account b2bua contact cons ctrl_tcp debug_cmd echo httpd menu natpmp ice stun turn serreg uuid stdio"
-my_audio_modules="aubridge aufile auloop ausine"
+my_audio_modules="aubridge aufile auloop ausine mixminus"
 my_codec_modules="g711 g722 opus"
 my_tls_modules="dtls_srtp srtp"
 

@@ -39,6 +39,7 @@ struct sdp_session;
 struct sip_msg;
 struct stream;
 struct ua;
+struct auframe;
 struct vidframe;
 struct vidrect;
 struct vidsz;
@@ -132,28 +133,6 @@ bool account_sip_autoanswer(const struct account *acc);
 void account_set_sip_autoanswer(struct account *acc, bool allow);
 enum sipansbeep account_sipansbeep(const struct account *acc);
 void account_set_sipansbeep(struct account *acc, enum sipansbeep beep);
-
-
-/*
- * Audio frame
- */
-
-/**
- * Defines a frame of audio samples
- */
-struct auframe {
-	int fmt;             /**< Sample format (enum aufmt)        */
-	void *sampv;         /**< Audio samples (must be mem_ref'd) */
-	size_t sampc;        /**< Total number of audio samples     */
-	uint64_t timestamp;  /**< Timestamp in AUDIO_TIMEBASE units */
-	uint32_t srate;      /**< Samplerate                        */
-	uint8_t ch;          /**< Channels                          */
-};
-
-void auframe_init(struct auframe *af, int fmt, void *sampv, size_t sampc,
-		  uint32_t srate, uint8_t ch);
-size_t auframe_size(const struct auframe *af);
-void   auframe_mute(struct auframe *af);
 
 
 /*
@@ -1294,6 +1273,8 @@ int  audio_start_source(struct audio *a, struct list *ausrcl,
 void audio_stop(struct audio *a);
 bool audio_started(const struct audio *a);
 void audio_set_hold(struct audio *au, bool hold);
+int  audio_set_conference(struct audio *au, bool conference);
+bool audio_is_conference(const struct audio *au);
 int  audio_encoder_set(struct audio *a, const struct aucodec *ac,
 		       int pt_tx, const char *params);
 int  audio_decoder_set(struct audio *a, const struct aucodec *ac,

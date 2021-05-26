@@ -13,6 +13,7 @@ func main() {
 		gobaresip.SetAudioPath("sounds"),
 		gobaresip.SetConfigPath("."),
 		gobaresip.SetWsAddr("0.0.0.0:8080"),
+		gobaresip.SetDebug(true),
 	)
 	if err != nil {
 		log.Fatal(err)
