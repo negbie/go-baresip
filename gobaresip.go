@@ -73,6 +73,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -252,7 +253,7 @@ func (b *Baresip) read() {
 			if strings.HasPrefix(r.Token, "cmd_auto") {
 				r.Ok = true
 				b.autoCmd.mux.RLock()
-				r.Data = fmt.Sprintf("Dial%v;Hangupgap=%d",
+				r.Data = fmt.Sprintf("dial%v;hangupgap=%d",
 					b.autoCmd.num,
 					atomic.LoadUint32(&b.autoCmd.hangupGap),
 				)
@@ -320,7 +321,7 @@ func (b *Baresip) keepActive() {
 			break
 		}
 		time.Sleep(1 * time.Second)
-		b.Cmd("listcalls", "", "keep_active_ping")
+		b.Cmd("about", "", "keep_active_ping")
 	}
 }
 
