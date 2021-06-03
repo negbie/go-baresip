@@ -68,7 +68,6 @@ int mainLoop(){
 import "C"
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -79,6 +78,8 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+
+	"github.com/goccy/go-json"
 )
 
 //ResponseMsg
@@ -221,7 +222,7 @@ func (b *Baresip) read() {
 			b.eventChan <- e
 			if b.wsAddr != "" {
 				select {
-				case b.eventWsChan <- appendByte(e.RawJSON, []byte("\n")):
+				case b.eventWsChan <- e.RawJSON:
 				default:
 				}
 			}
@@ -271,19 +272,12 @@ func (b *Baresip) read() {
 			b.responseChan <- r
 			if b.wsAddr != "" {
 				select {
-				case b.responseWsChan <- appendByte(r.RawJSON, []byte("\n")):
+				case b.responseWsChan <- r.RawJSON:
 				default:
 				}
 			}
 		}
 	}
-}
-
-func appendByte(prefix []byte, suffix []byte) []byte {
-	b := make([]byte, len(prefix)+len(suffix))
-	n := copy(b, prefix)
-	copy(b[n:], suffix)
-	return b
 }
 
 func findID(data []byte) string {

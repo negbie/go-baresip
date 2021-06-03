@@ -2,13 +2,14 @@ package gobaresip
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 	"unicode"
+
+	"github.com/goccy/go-json"
 )
 
 /*

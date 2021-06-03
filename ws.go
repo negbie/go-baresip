@@ -23,6 +23,10 @@ const (
 	maxMessageSize = 1024
 )
 
+var (
+	newline = []byte{'\n'}
+)
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -94,6 +98,7 @@ func (c *client) writePump() {
 			// Add queued messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
+				w.Write(newline)
 				w.Write(<-c.send)
 			}
 
