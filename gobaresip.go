@@ -311,11 +311,12 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 
 func (b *Baresip) keepActive() {
 	for {
+		time.Sleep(1 * time.Second)
 		if atomic.LoadUint32(&b.ctrlConnAlive) == 0 {
 			break
 		}
-		time.Sleep(1 * time.Second)
-		b.Cmd("about", "", "keep_active_ping")
+		b.ctrlConn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		b.ctrlConn.Write([]byte(`46:{"command":"about","token":"keep_active_ping"},`))
 	}
 }
 
