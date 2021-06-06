@@ -26,9 +26,9 @@ package gobaresip
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -49,10 +49,21 @@ func (r *reader) readNetstring() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	l, err := strconv.Atoi(strings.TrimSuffix(string(length), string(lengthDelim)))
-	if err != nil {
-		return nil, err
+
+	var l int
+	for _, ch := range length {
+		if ch != lengthDelim && ch != dataDelim {
+			ch -= '0'
+			if ch > 9 {
+				return nil, fmt.Errorf("wrong netstring length character")
+			}
+			l = l*10 + int(ch)
+		}
 	}
+	if l <= 0 {
+		return nil, fmt.Errorf("wrong netstring length")
+	}
+
 	ret := make([]byte, l)
 	_, err = io.ReadFull(r.r, ret)
 	if err != nil {

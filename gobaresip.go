@@ -227,9 +227,6 @@ func (b *Baresip) read() {
 				}
 			}
 		} else if bytes.Contains(msg, []byte("\"response\":true")) {
-			if bytes.Contains(msg, []byte("keep_active_ping")) {
-				continue
-			}
 
 			var r ResponseMsg
 			r.RawJSON = msg
@@ -309,6 +306,8 @@ func (b *Baresip) GetResponseChan() <-chan ResponseMsg {
 	return b.responseChan
 }
 
+var ping = []byte(`16:{"token":"ping"},`)
+
 func (b *Baresip) keepActive() {
 	for {
 		time.Sleep(1 * time.Second)
@@ -316,7 +315,7 @@ func (b *Baresip) keepActive() {
 			break
 		}
 		b.ctrlConn.SetWriteDeadline(time.Now().Add(2 * time.Second))
-		b.ctrlConn.Write([]byte(`46:{"command":"about","token":"keep_active_ping"},`))
+		b.ctrlConn.Write(ping)
 	}
 }
 
