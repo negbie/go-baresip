@@ -322,6 +322,7 @@ struct config_audio {
 	int enc_fmt;            /**< Audio encoder sample format    */
 	int dec_fmt;            /**< Audio decoder sample format    */
 	struct range buffer;    /**< Audio receive buffer in [ms]   */
+	uint32_t telev_pt;      /**< Payload type for tel.-event    */
 };
 
 /** Video */
@@ -753,6 +754,7 @@ enum ua_event {
 	UA_EVENT_CALL_ESTABLISHED,
 	UA_EVENT_CALL_CLOSED,
 	UA_EVENT_CALL_TRANSFER,
+	UA_EVENT_CALL_BLIND_TRANSFER,
 	UA_EVENT_CALL_TRANSFER_FAILED,
 	UA_EVENT_CALL_DTMF_START,
 	UA_EVENT_CALL_DTMF_END,
@@ -853,6 +855,9 @@ void uag_enable_sip_trace(bool enable);
 int  uag_reset_transp(bool reg, bool reinvite);
 void uag_set_sub_handler(sip_msg_h *subh);
 int  uag_set_extra_params(const char *eprm);
+int  uag_enable_udp(bool en);
+int  uag_enable_tcp(bool en);
+int  uag_enable_tls(bool en);
 struct ua   *uag_find(const struct pl *cuser);
 struct ua   *uag_find_msg(const struct sip_msg *msg);
 struct ua   *uag_find_aor(const char *aor);
@@ -1063,7 +1068,6 @@ const struct vidisp *vidisp_find(const struct list *vidispl, const char *name);
 
 /** Audio Codec parameters */
 struct auenc_param {
-	uint32_t ptime;    /**< Packet time in [ms]       */
 	uint32_t bitrate;  /**< Wanted bitrate in [bit/s] */
 };
 
@@ -1382,6 +1386,7 @@ struct stun_uri {
 	enum stun_scheme scheme;  /**< STUN Scheme            */
 	char *host;               /**< Hostname or IP-address */
 	uint16_t port;            /**< Port number            */
+	int proto;                /**< Transport protocol     */
 };
 
 int stunuri_decode(struct stun_uri **sup, const struct pl *pl);

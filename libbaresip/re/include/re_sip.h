@@ -4,6 +4,8 @@
  * Copyright (C) 2010 Creytiv.com
  */
 
+/* forward declarations */
+struct tls;
 
 enum {
 	SIP_PORT     = 5060,
@@ -269,7 +271,7 @@ int  sip_transp_add(struct sip *sip, enum sip_transp tp,
 		    const struct sa *laddr, ...);
 int  sip_transp_add_websock(struct sip *sip, enum sip_transp tp,
 			    const struct sa *laddr,
-			    bool server, const char *cert);
+			    bool server, const char *cert, struct tls *tls);
 int  sip_transp_add_ccert(struct sip *sip, const struct uri *uri,
 			  const char *ccertfile);
 void sip_transp_flush(struct sip *sip);
@@ -347,6 +349,7 @@ int  sip_dialog_fork(struct sip_dialog **dlgp, struct sip_dialog *odlg,
 int  sip_dialog_update(struct sip_dialog *dlg, const struct sip_msg *msg);
 bool sip_dialog_rseq_valid(struct sip_dialog *dlg, const struct sip_msg *msg);
 const char *sip_dialog_callid(const struct sip_dialog *dlg);
+const char *sip_dialog_uri(const struct sip_dialog *dlg);
 uint32_t sip_dialog_lseq(const struct sip_dialog *dlg);
 bool sip_dialog_established(const struct sip_dialog *dlg);
 bool sip_dialog_cmp(const struct sip_dialog *dlg, const struct sip_msg *msg);
