@@ -7,7 +7,7 @@ package gobaresip
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/opus/libopus.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libssl.a
 #cgo linux LDFLAGS: ${SRCDIR}/libbaresip/openssl/libcrypto.a
-#cgo linux LDFLAGS: -ldl -lm -lasound
+#cgo linux LDFLAGS: -ldl -lm
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -30,6 +30,21 @@ static void signal_handler(int sig)
 	info("terminated by signal %d\n", sig);
 
 	ua_stop_all(false);
+}
+
+static void net_change_handler(void *arg)
+{
+	(void)arg;
+
+	info("IP-address changed: %j\n",
+	     net_laddr_af(baresip_network(), AF_INET));
+
+	(void)uag_reset_transp(true, true);
+}
+
+static void set_net_change_handler()
+{
+	net_change(baresip_network(), 60, net_change_handler, NULL);
 }
 
 static void ua_exit_handler(void *arg)
@@ -355,6 +370,7 @@ func (b *Baresip) setup() error {
 		return b.end(err)
 	}
 
+	C.set_net_change_handler()
 	C.set_ua_exit_handler()
 
 	err = C.conf_modules()
