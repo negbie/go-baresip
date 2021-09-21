@@ -61,7 +61,8 @@ enum answermode {
 /** Defines the DTMF send type */
 enum dtmfmode {
 	DTMFMODE_RTP_EVENT = 0,
-	DTMFMODE_SIP_INFO
+	DTMFMODE_SIP_INFO,
+	DTMFMODE_AUTO
 };
 
 /** SIP auto answer beep modes */
@@ -135,6 +136,8 @@ bool account_sip_autoanswer(const struct account *acc);
 void account_set_sip_autoanswer(struct account *acc, bool allow);
 enum sipansbeep account_sipansbeep(const struct account *acc);
 void account_set_sipansbeep(struct account *acc, enum sipansbeep beep);
+void account_set_autelev_pt(struct account *acc, uint32_t pt);
+uint32_t account_autelev_pt(struct account *acc);
 
 
 /*
@@ -177,7 +180,7 @@ struct call;
 typedef void (call_event_h)(struct call *call, enum call_event ev,
 			    const char *str, void *arg);
 typedef void (call_dtmf_h)(struct call *call, char key, void *arg);
-typedef bool (call_match_h)(const struct call *call);
+typedef bool (call_match_h)(const struct call *call, void *arg);
 typedef void (call_list_h)(struct call *call, void *arg);
 
 
@@ -191,6 +194,7 @@ int  call_set_video_dir(struct call *call, enum sdp_dir dir);
 int  call_send_digit(struct call *call, char key);
 bool call_has_audio(const struct call *call);
 bool call_has_video(const struct call *call);
+bool call_early_video_available(const struct call *call);
 int  call_transfer(struct call *call, const char *uri);
 int  call_replace_transfer(struct call *target_call, struct call *source_call);
 int  call_status(struct re_printf *pf, const struct call *call);
@@ -243,6 +247,12 @@ int custom_hdrs_apply(const struct list *hdrs, custom_hdrs_h *h, void *arg);
  * Conf (utils)
  */
 
+/** A range of numbers */
+struct range {
+	uint32_t min;  /**< Minimum number */
+	uint32_t max;  /**< Maximum number */
+};
+
 
 /** Defines the configuration line handler */
 typedef int (confline_h)(const struct pl *addr, void *arg);
@@ -253,9 +263,12 @@ int  conf_modules(void);
 void conf_path_set(const char *path);
 int  conf_path_get(char *path, size_t sz);
 int  conf_parse(const char *filename, confline_h *ch, void *arg);
+int  conf_get_range(const struct conf *conf, const char *name,
+		    struct range *rng);
 int  conf_get_vidsz(const struct conf *conf, const char *name,
 		    struct vidsz *sz);
 int  conf_get_sa(const struct conf *conf, const char *name, struct sa *sa);
+enum jbuf_type conf_get_jbuf_type(const struct pl *pl);
 bool conf_fileexist(const char *path);
 void conf_close(void);
 struct conf *conf_cur(void);
@@ -264,12 +277,6 @@ struct conf *conf_cur(void);
 /*
  * Config (core configuration)
  */
-
-/** A range of numbers */
-struct range {
-	uint32_t min;  /**< Minimum number */
-	uint32_t max;  /**< Maximum number */
-};
 
 static inline bool in_range(const struct range *rng, uint32_t val)
 {
@@ -290,6 +297,7 @@ struct config_sip {
 	char cert[256];         /**< SIP Certificate                */
 	char cafile[256];       /**< SIP CA-file                    */
 	char capath[256];       /**< SIP CA-path                    */
+	uint32_t transports;    /**< Supported transports mask      */
 	enum sip_transp transp; /**< Default outgoing SIP transport protocol */
 	bool verify_server;     /**< Enable SIP TLS verify server   */
 	uint8_t tos;            /**< Type-of-Service for SIP        */
@@ -350,6 +358,7 @@ struct config_avt {
 	uint32_t jbuf_wish;     /**< Startup wish delay of frames   */
 	bool rtp_stats;         /**< Enable RTP statistics          */
 	uint32_t rtp_timeout;   /**< RTP Timeout in seconds (0=off) */
+	bool bundle;            /**< Media Multiplexing (BUNDLE)    */
 };
 
 /** Network Configuration */
@@ -695,16 +704,21 @@ int  net_alloc(struct network **netp, const struct config_net *cfg);
 int  net_use_nameserver(struct network *net,
 			const struct sa *srvv, size_t srvc);
 int  net_set_address(struct network *net, const struct sa *ip);
-void net_change(struct network *net, uint32_t interval,
-		net_change_h *ch, void *arg);
-void net_force_change(struct network *net);
-bool net_check(struct network *net);
+int  net_add_address(struct network *net, const struct sa *ip);
+int  net_flush_addresses(struct network *net);
+int  net_rm_address(struct network *net, const struct sa *ip);
 bool net_af_enabled(const struct network *net, int af);
 int  net_set_af(struct network *net, int af);
 void net_dns_refresh(struct network *net);
 int  net_dns_debug(struct re_printf *pf, const struct network *net);
 int  net_debug(struct re_printf *pf, const struct network *net);
+bool net_laddr_apply(const struct network *net, net_ifaddr_h *ifh, void *arg);
+void net_set_add_handler(struct network *net, net_ifaddr_h *ifh, void *arg);
+void net_set_rm_handler(struct network *net, net_ifaddr_h *ifh, void *arg);
+bool net_ifaddr_filter(const struct network *net, const char *ifname,
+		       const struct sa *sa);
 const struct sa *net_laddr_af(const struct network *net, int af);
+bool net_is_laddr(const struct network *net, struct sa *sa);
 struct dnsc     *net_dnsc(const struct network *net);
 
 
@@ -855,9 +869,7 @@ void uag_enable_sip_trace(bool enable);
 int  uag_reset_transp(bool reg, bool reinvite);
 void uag_set_sub_handler(sip_msg_h *subh);
 int  uag_set_extra_params(const char *eprm);
-int  uag_enable_udp(bool en);
-int  uag_enable_tcp(bool en);
-int  uag_enable_tls(bool en);
+int  uag_enable_transport(enum sip_transp tp, bool en);
 struct ua   *uag_find(const struct pl *cuser);
 struct ua   *uag_find_msg(const struct sip_msg *msg);
 struct ua   *uag_find_aor(const char *aor);
@@ -1255,7 +1267,7 @@ typedef void (audio_err_h)(int err, const char *str, void *arg);
 int audio_alloc(struct audio **ap, struct list *streaml,
 		const struct stream_param *stream_prm,
 		const struct config *cfg,
-		struct account *acc, struct sdp_session *sdp_sess, int label,
+		struct account *acc, struct sdp_session *sdp_sess,
 		const struct mnat *mnat, struct mnat_sess *mnat_sess,
 		const struct menc *menc, struct menc_sess *menc_sess,
 		uint32_t ptime, const struct list *aucodecl, bool offerer,
@@ -1301,7 +1313,7 @@ typedef void (video_err_h)(int err, const char *str, void *arg);
 int  video_alloc(struct video **vp, struct list *streaml,
 		 const struct stream_param *stream_prm,
 		 const struct config *cfg,
-		 struct sdp_session *sdp_sess, int label,
+		 struct sdp_session *sdp_sess,
 		 const struct mnat *mnat, struct mnat_sess *mnat_sess,
 		 const struct menc *menc, struct menc_sess *menc_sess,
 		 const char *content, const struct list *vidcodecl,
@@ -1346,7 +1358,7 @@ typedef void (stream_rtcp_h)(struct stream *strm,
 			     struct rtcp_msg *msg, void *arg);
 typedef void (stream_error_h)(struct stream *strm, int err, void *arg);
 
-void stream_update(struct stream *s);
+int stream_update(struct stream *s);
 const struct rtcp_stats *stream_rtcp_stats(const struct stream *strm);
 struct sdp_media *stream_sdpmedia(const struct stream *s);
 uint32_t stream_metric_get_tx_n_packets(const struct stream *strm);
@@ -1358,15 +1370,21 @@ uint32_t stream_metric_get_rx_n_err(const struct stream *strm);
 void stream_set_secure(struct stream *strm, bool secure);
 bool stream_is_secure(const struct stream *strm);
 int  stream_start_mediaenc(struct stream *strm);
-int  stream_start(const struct stream *strm);
+int  stream_start_rtcp(const struct stream *strm);
 int stream_open_natpinhole(const struct stream *strm);
+void stream_mnat_attr(struct stream *strm, const char *name,
+		      const char *value);
 void stream_set_session_handlers(struct stream *strm,
 				 stream_mnatconn_h *mnatconnh,
 				 stream_rtpestab_h *rtpestabh,
 				 stream_rtcp_h *rtcph,
 				 stream_error_h *errorh, void *arg);
+struct stream *stream_lookup_mid(const struct list *streaml,
+				 const char *mid, size_t len);
 const char *stream_name(const struct stream *strm);
+int  stream_bundle_init(struct stream *strm, bool offerer);
 int  stream_debug(struct re_printf *pf, const struct stream *s);
+void stream_enable_rtp_timeout(struct stream *strm, uint32_t timeout_ms);
 
 
 /*
@@ -1425,6 +1443,9 @@ typedef int (mnat_media_h)(struct mnat_media **mp, struct mnat_sess *sess,
 
 typedef int (mnat_update_h)(struct mnat_sess *sess);
 
+typedef void (mnat_attr_h)(struct mnat_media *mm,
+			   const char *name, const char *value);
+
 struct mnat {
 	struct le le;
 	const char *id;
@@ -1433,6 +1454,7 @@ struct mnat {
 	mnat_sess_h *sessh;
 	mnat_media_h *mediah;
 	mnat_update_h *updateh;
+	mnat_attr_h *attrh;
 };
 
 void mnat_register(struct list *mnatl, struct mnat *mnat);
@@ -1512,6 +1534,19 @@ struct list   *baresip_vidsrcl(void);
 struct list   *baresip_vidispl(void);
 struct list   *baresip_vidfiltl(void);
 struct ui_sub *baresip_uis(void);
+
+
+/*
+ * Dialing numbers helpers
+ */
+
+int clean_number(char* str);
+
+
+/* bundle */
+
+int bundle_sdp_encode(struct sdp_session *sdp, const struct list *streaml);
+int bundle_sdp_decode(struct sdp_session *sdp, struct list *streaml);
 
 
 #ifdef __cplusplus
