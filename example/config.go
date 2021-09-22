@@ -88,7 +88,7 @@ call_hold_other_calls   no
 audio_path              sounds
 audio_player            alsa,default
 audio_source            alsa,default
-#audio_alert            aufile,sounds/ring.wav
+audio_alert             alsa,default
 #ausrc_srate            48000
 #auplay_srate           48000
 #ausrc_channels         0
@@ -100,6 +100,7 @@ auplay_format           s16             # s16, float, ..
 auenc_format            s16             # s16, float, ..
 audec_format            s16             # s16, float, ..
 audio_buffer            20-320          # ms
+audio_telev_pt          101             # payload type for telephone-event
 
 # Video
 #video_source           v4l2,/dev/video0
@@ -119,13 +120,13 @@ rtcp_mux                no
 jitter_buffer_type      fixed           # off, fixed, adaptive
 jitter_buffer_delay     5-10            # frames
 #jitter_buffer_wish     6               # frames for start
-rtp_stats               no
+rtp_stats               yes
 #rtp_timeout            60
 
 # Network
 #dns_server             1.1.1.1:53
 #dns_server             1.0.0.1:53
-dns_fallback            8.8.8.8:53
+#dns_fallback           8.8.8.8:53
 #net_interface          eth0
 
 # Play tones
@@ -205,6 +206,7 @@ module                  ausine.so
 
 # Compatibility modules
 #module                 ebuacip.so
+module                  uuid.so
 
 # Media NAT modules
 module                  stun.so
@@ -218,14 +220,11 @@ module                  srtp.so
 module                  dtls_srtp.so
 #module                 zrtp.so
 
-module                  uuid.so
-module                  account.so
 
 #------------------------------------------------------------------------------
 # Application Modules
 
-
-#module_app             auloop.so
+module_app              account.so
 #module_app             b2bua.so
 module_app              contact.so
 #module_app             debug_cmd.so
@@ -238,10 +237,10 @@ module_app              serreg.so
 #module_app             syslog.so
 #module_app             mqtt.so
 module_app              ctrl_tcp.so
-#module_app             vidloop.so
 #module_app             ctrl_dbus.so
 #module_app             httpreq.so
 #module_app             multicast.so
+module_app		        netroam.so
 
 
 #------------------------------------------------------------------------------
@@ -344,10 +343,6 @@ statmode_default        off
 #multicast_listener     224.0.2.21:50002
 
 # avformat
-#avformat_hwaccel         vaapi
-#avformat_inputformat     mjpeg
-#avformat_decoder         mjpeg
-#avformat_pass_through    yes
-#avformat_rtsp_transport  udp
+#avformat_pass_through  yes
 
 `
