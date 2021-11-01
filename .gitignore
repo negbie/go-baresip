@@ -6,5 +6,4 @@ uuid
 libbaresip/git
 espeak/espeak-ng
 espeak/soxr-code
-example/example
-telefonist
+telefonist/telefonist
