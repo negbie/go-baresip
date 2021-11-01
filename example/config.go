@@ -231,8 +231,8 @@ module_app              contact.so
 #module_app             echo.so
 #module_app             gtk.so
 module_app              menu.so
-#module_app             mwi.so
-#module_app             presence.so
+module_app              mwi.so
+module_app              presence.so
 module_app              serreg.so
 #module_app             syslog.so
 #module_app             mqtt.so
@@ -240,7 +240,7 @@ module_app              ctrl_tcp.so
 #module_app             ctrl_dbus.so
 #module_app             httpreq.so
 #module_app             multicast.so
-module_app		        netroam.so
+module_app              netroam.so
 
 
 #------------------------------------------------------------------------------
