@@ -91,7 +91,6 @@ int account_set_stun_host(struct account *acc, const char *host);
 int account_set_stun_port(struct account *acc, uint16_t port);
 int account_set_stun_user(struct account *acc, const char *user);
 int account_set_stun_pass(struct account *acc, const char *pass);
-int account_set_mediaaf(struct account *acc, int mediaaf);
 int account_set_mediaenc(struct account *acc, const char *mediaenc);
 int account_set_medianat(struct account *acc, const char *medianat);
 int account_set_audio_codecs(struct account *acc, const char *codecs);
@@ -122,7 +121,6 @@ const char *account_stun_pass(const struct account *acc);
 const char *account_stun_host(const struct account *acc);
 const struct stun_uri *account_stun_uri(const struct account *acc);
 uint16_t account_stun_port(const struct account *acc);
-int         account_mediaaf(const struct account *acc);
 const char *account_mediaenc(const struct account *acc);
 const char *account_medianat(const struct account *acc);
 const char *account_mwi(const struct account *acc);
@@ -166,6 +164,7 @@ enum call_state {
 	CALL_STATE_EARLY,
 	CALL_STATE_ESTABLISHED,
 	CALL_STATE_TERMINATED,
+	CALL_STATE_TRANSFER,
 	CALL_STATE_UNKNOWN
 };
 
@@ -1354,13 +1353,18 @@ struct sdp_media *stream_sdpmedia(const struct stream *s);
 uint32_t stream_metric_get_tx_n_packets(const struct stream *strm);
 uint32_t stream_metric_get_tx_n_bytes(const struct stream *strm);
 uint32_t stream_metric_get_tx_n_err(const struct stream *strm);
+uint32_t stream_metric_get_tx_bitrate(const struct stream *strm);
+double stream_metric_get_tx_avg_bitrate(const struct stream *strm);
 uint32_t stream_metric_get_rx_n_packets(const struct stream *strm);
 uint32_t stream_metric_get_rx_n_bytes(const struct stream *strm);
 uint32_t stream_metric_get_rx_n_err(const struct stream *strm);
+uint32_t stream_metric_get_rx_bitrate(const struct stream *strm);
+double stream_metric_get_rx_avg_bitrate(const struct stream *strm);
 void stream_set_secure(struct stream *strm, bool secure);
 bool stream_is_secure(const struct stream *strm);
 int  stream_start_mediaenc(struct stream *strm);
 int  stream_start_rtcp(const struct stream *strm);
+int  stream_enable(struct stream *strm, bool enable);
 int stream_open_natpinhole(const struct stream *strm);
 void stream_mnat_attr(struct stream *strm, const char *name,
 		      const char *value);
