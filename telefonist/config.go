@@ -156,12 +156,11 @@ module                  g711.so
 #module                 l16.so
 #module                 mpa.so
 #module                 codec2.so
-#module                 ilbc.so
 
 # Audio filter Modules (in encoding order)
+module                  auresamp.so
 #module                 vumeter.so
 #module                 sndfile.so
-#module                 speex_pp.so
 #module                 plc.so
 #module                 webrtc_aec.so
 
@@ -188,7 +187,6 @@ module                  ausine.so
 
 # Video source modules
 #module                 v4l2.so
-#module                 v4l2_codec.so
 #module                 x11grab.so
 #module                 vidbridge.so
 
@@ -200,7 +198,6 @@ module                  ausine.so
 
 # Audio/Video source modules
 #module                 avformat.so
-#module                 rst.so
 #module                 gst.so
 #module                 gst_video.so
 
@@ -225,7 +222,6 @@ module                  dtls_srtp.so
 # Application Modules
 
 module_app              account.so
-#module_app             b2bua.so
 module_app              contact.so
 #module_app             debug_cmd.so
 #module_app             echo.so
@@ -339,10 +335,19 @@ statmode_default        off
 
 # multicast receivers (in priority order)- port number must be even
 #multicast_call_prio    0
+#multicast_ttl  1
+#multicast_jbuf_type    fixed           # off, fixed, adaptive
+#multicast_jbuf_delay   5-10            # frames
+#multicast_jbuf_wish    6               # frames for start
 #multicast_listener     224.0.2.21:50000
 #multicast_listener     224.0.2.21:50002
 
 # avformat
+#avformat_hwaccel       vaapi
+#avformat_inputformat   mjpeg
+#avformat_decoder       mjpeg
 #avformat_pass_through  yes
+#avformat_rtsp_transport        udp
+
 
 `
