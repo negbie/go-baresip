@@ -279,7 +279,7 @@ window.onload = function () {
                 if (j.hasOwnProperty("data")) {
                     j["data"] = j["data"].trim().replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
                 }
-                item.innerText = JSON.stringify(j, undefined, 2);
+                item.innerHTML = JSON.stringify(j, undefined, 2).replace(/\\n/g, "<br>    ");
                 
                 appendLog(item);
                 simpleSearch();
