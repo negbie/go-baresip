@@ -16,6 +16,16 @@
 #include <arpa/inet.h>
 #endif
 
+/* Socket helpers */
+#ifdef WIN32
+#define ERRNO_SOCK WSAGetLastError()
+#define BAD_SOCK INVALID_SOCKET
+typedef size_t re_sock_t;
+#else
+#define ERRNO_SOCK errno
+#define BAD_SOCK -1
+typedef int re_sock_t;
+#endif
 
 /** Length of IPv4 address string */
 #ifndef INET_ADDRSTRLEN
@@ -50,8 +60,8 @@ void net_sock_close(void);
 
 
 /* Net socket options */
-int net_sockopt_blocking_set(int fd, bool blocking);
-int net_sockopt_reuse_set(int fd, bool reuse);
+int net_sockopt_blocking_set(re_sock_t fd, bool blocking);
+int net_sockopt_reuse_set(re_sock_t fd, bool reuse);
 
 
 /* Net interface (if.c) */
@@ -105,3 +115,4 @@ int net_rt_debug(struct re_printf *pf, void *unused);
 /* Net strings */
 const char *net_proto2name(int proto);
 const char *net_af2name(int af);
+

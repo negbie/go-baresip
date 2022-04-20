@@ -25,6 +25,7 @@ extern "C" {
 #include "re_bfcp.h"
 #include "re_btrace.h"
 #include "re_conf.h"
+#include "re_convert.h"
 #include "re_crc32.h"
 #include "re_dns.h"
 #include "re_hash.h"
@@ -34,12 +35,12 @@ extern "C" {
 #include "re_ice.h"
 #include "re_jbuf.h"
 #include "re_lock.h"
+#include "re_net.h"
 #include "re_main.h"
 #include "re_md5.h"
 #include "re_mem.h"
 #include "re_mod.h"
 #include "re_mqueue.h"
-#include "re_net.h"
 #include "re_odict.h"
 #include "re_json.h"
 #include "re_rtmp.h"
@@ -61,6 +62,9 @@ extern "C" {
 #include "re_turn.h"
 #include "re_udp.h"
 #include "re_websock.h"
+#include "re_shim.h"
+#include "re_trice.h"
+#include "re_pcp.h"
 
 #ifdef __cplusplus
 }

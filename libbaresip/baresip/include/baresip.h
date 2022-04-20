@@ -13,7 +13,7 @@ extern "C" {
 
 
 /** Defines the Baresip version string */
-#define BARESIP_VERSION "1.1.0"
+#define BARESIP_VERSION "2.0.2"
 
 
 #ifndef NET_MAX_NS
@@ -168,6 +168,11 @@ enum call_state {
 	CALL_STATE_UNKNOWN
 };
 
+/** Supported tags */
+enum supported_tags {
+	REPLACES = 1,
+};
+
 /** Video mode */
 enum vidmode {
 	VIDMODE_OFF = 0,    /**< Video disabled                */
@@ -185,6 +190,8 @@ typedef void (call_list_h)(struct call *call, void *arg);
 
 int  call_connect(struct call *call, const struct pl *paddr);
 int  call_answer(struct call *call, uint16_t scode, enum vidmode vmode);
+int  call_progress_dir(struct call *call,
+		       enum sdp_dir adir, enum sdp_dir vdir);
 int  call_progress(struct call *call);
 void call_hangup(struct call *call, uint16_t scode, const char *reason);
 int  call_modify(struct call *call);
@@ -212,6 +219,7 @@ const char   *call_peeruri(const struct call *call);
 const char   *call_peername(const struct call *call);
 const char   *call_localuri(const struct call *call);
 const char   *call_alerturi(const struct call *call);
+const char   *call_diverteruri(const struct call *call);
 struct audio *call_audio(const struct call *call);
 struct video *call_video(const struct call *call);
 struct list  *call_streaml(const struct call *call);
@@ -229,6 +237,7 @@ const struct list *call_get_custom_hdrs(const struct call *call);
 int call_set_media_direction(struct call *call, enum sdp_dir a,
 			     enum sdp_dir v);
 void call_start_answtmr(struct call *call, uint32_t ms);
+bool          call_supported(struct call *call, uint16_t tags);
 
 
 /*
@@ -268,6 +277,7 @@ int  conf_get_vidsz(const struct conf *conf, const char *name,
 		    struct vidsz *sz);
 int  conf_get_sa(const struct conf *conf, const char *name, struct sa *sa);
 enum jbuf_type conf_get_jbuf_type(const struct pl *pl);
+bool conf_aubuf_adaptive(const struct pl *pl);
 void conf_close(void);
 struct conf *conf_cur(void);
 int conf_loadfile(struct mbuf **mbp, const char *filename);
@@ -329,6 +339,8 @@ struct config_audio {
 	int enc_fmt;            /**< Audio encoder sample format    */
 	int dec_fmt;            /**< Audio decoder sample format    */
 	struct range buffer;    /**< Audio receive buffer in [ms]   */
+	bool adaptive;          /**< Enable adaptive audio buffer   */
+	double silence;         /**< Silence volume in [dB]         */
 	uint32_t telev_pt;      /**< Payload type for tel.-event    */
 };
 
@@ -354,7 +366,6 @@ struct config_avt {
 	bool rtcp_mux;          /**< RTP/RTCP multiplexing          */
 	enum jbuf_type jbtype;  /**< Jitter buffer type             */
 	struct range jbuf_del;  /**< Delay, number of frames        */
-	uint32_t jbuf_wish;     /**< Startup wish delay of frames   */
 	bool rtp_stats;         /**< Enable RTP statistics          */
 	uint32_t rtp_timeout;   /**< RTP Timeout in seconds (0=off) */
 	bool bundle;            /**< Media Multiplexing (BUNDLE)    */

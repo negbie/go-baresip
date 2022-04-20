@@ -61,7 +61,8 @@ enum rtcp_sdes_type {
 
 /** Transport Layer Feedback Messages */
 enum rtcp_rtpfb {
-	RTCP_RTPFB_GNACK = 1  /**< Generic NACK */
+	RTCP_RTPFB_GNACK = 1,  /**< Generic NACK */
+	RTCP_RTPFB_TWCC  = 15  /**< transport-wide-cc-extensions-01 */
 };
 
 /** Payload-Specific Feedback Messages */
@@ -75,7 +76,7 @@ enum rtcp_psfb {
 struct rtcp_rr {
 	uint32_t ssrc;            /**< Data source being reported      */
 	unsigned int fraction:8;  /**< Fraction lost since last SR/RR  */
-	int lost:24;              /**< Cumul. no. pkts lost (signed!)  */
+	signed int lost:24;       /**< Cumul. no. pkts lost (signed!)  */
 	uint32_t last_seq;        /**< Extended last seq. no. received */
 	uint32_t jitter;          /**< Interarrival jitter             */
 	uint32_t lsr;             /**< Last SR packet from this source */
@@ -166,6 +167,14 @@ struct rtcp_msg {
 					uint16_t number;
 					uint8_t picid;
 				} *sliv;
+				struct twcc {
+					uint16_t seq;
+					uint16_t count;
+					uint32_t reftime;
+					uint8_t fbcount;
+					struct mbuf *chunks;
+					struct mbuf *deltas;
+				} *twccv;
 				struct mbuf *afb;
 				void *p;
 			} fci;
