@@ -18,13 +18,14 @@ extern "C" {
 /* With MSVC volatile is atomic */
 #elif defined(_MSC_VER)
 #define RE_ATOMIC volatile
+#define atomic_load(object) InterlockedOr((object), 0)
 
 /* C99 compiler builtin fallbacks */
 #elif defined(__clang__)
 #define __CLANG_ATOMICS
 
 #elif defined(__GNUC__)
-#if __GNUC_PREREQ(4, 9)
+#if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x40009
 #define __SYNC_ATOMICS
 #else
 #error "Atomic requires gcc >= 4.9"
