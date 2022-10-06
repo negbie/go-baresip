@@ -158,8 +158,8 @@ func New(options ...func(*Baresip) error) (*Baresip, error) {
 		return nil, err
 	}
 
-	// Simple solution for this https://github.com/baresip/baresip/issues/584
-	go b.keepActive()
+	// Simple workaround for this https://github.com/baresip/baresip/issues/584
+	// go b.keepActive()
 
 	return b, nil
 }
@@ -318,6 +318,8 @@ func (b *Baresip) setup() error {
 		return b.end(err)
 	}
 
+	C.re_thread_async_init(4)
+
 	if b.debug {
 		C.log_enable_stdout(true)
 	} else {
@@ -409,10 +411,14 @@ func (b *Baresip) end(err C.int) error {
 	// Modules must be unloaded after all application activity has stopped.
 	C.mod_close()
 
+	C.re_thread_async_close()
+
+	/* Check for open timers */
+	C.tmr_debug()
+
 	C.libre_close()
 
 	// Check for memory leaks
-	C.tmr_debug()
 	C.mem_debug()
 
 	return fmt.Errorf("%d", err)

@@ -77,8 +77,18 @@ func buildCommand(command, params, token string) *CommandMsg {
 	}
 }
 
+var lastParams string
+
 // Cmd will send a raw baresip command over ctrl_tcp.
 func (b *Baresip) Cmd(command, params, token string) error {
+	if command == "dial" {
+		if params != "" {
+			lastParams = params
+		} else {
+			params = lastParams
+		}
+	}
+
 	msg, err := json.Marshal(buildCommand(command, params, token))
 	if err != nil {
 		return err
