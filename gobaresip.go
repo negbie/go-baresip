@@ -310,7 +310,7 @@ func (b *Baresip) setup() error {
 	ua := C.CString(b.userAgent)
 	defer C.free(unsafe.Pointer(ua))
 
-	C.sys_coredump_set(1)
+	C.sys_coredump_set(true)
 
 	err := C.libre_init()
 	if err != 0 {
@@ -319,9 +319,9 @@ func (b *Baresip) setup() error {
 	}
 
 	if b.debug {
-		C.log_enable_stdout(1)
+		C.log_enable_stdout(true)
 	} else {
-		C.log_enable_stdout(0)
+		C.log_enable_stdout(false)
 	}
 
 	if b.configPath != "" {
@@ -349,7 +349,7 @@ func (b *Baresip) setup() error {
 		C.play_set_path(C.baresip_player(), ap)
 	}
 
-	err = C.ua_init(ua, 1, 1, 1)
+	err = C.ua_init(ua, true, true, true)
 	if err != 0 {
 		log.Printf("baresip ua init failed with error code %d\n", err)
 		return b.end(err)
@@ -364,11 +364,11 @@ func (b *Baresip) setup() error {
 	}
 
 	if b.debug {
-		C.log_enable_debug(1)
-		C.uag_enable_sip_trace(1)
+		C.log_enable_debug(true)
+		C.uag_enable_sip_trace(true)
 	} else {
-		C.log_enable_debug(0)
-		C.uag_enable_sip_trace(0)
+		C.log_enable_debug(false)
+		C.uag_enable_sip_trace(false)
 	}
 
 	/*
@@ -397,7 +397,7 @@ func (b *Baresip) Run() error {
 
 func (b *Baresip) end(err C.int) error {
 	if err != 0 {
-		C.ua_stop_all(1)
+		C.ua_stop_all(true)
 	}
 
 	C.ua_close()

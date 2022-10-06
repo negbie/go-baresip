@@ -4,13 +4,20 @@
  * Copyright (C) 2010 Creytiv.com
  */
 
+#ifdef USE_OPENSSL
+#include <openssl/ossl_typ.h>
+#endif
+
 struct tls;
 struct tls_conn;
 struct tcp_conn;
 struct udp_sock;
+
+#ifndef USE_OPENSSL
 struct ssl_ctx_st;
 
 typedef struct ssl_ctx_st SSL_CTX;
+#endif
 
 
 /** Defines the TLS method */
@@ -23,7 +30,6 @@ enum tls_method {
 };
 
 enum tls_fingerprint {
-	TLS_FINGERPRINT_SHA1,
 	TLS_FINGERPRINT_SHA256,
 };
 
@@ -122,5 +128,7 @@ void dtls_recv_packet(struct dtls_sock *sock, const struct sa *src,
 
 
 #ifdef USE_OPENSSL
-struct ssl_ctx_st *tls_openssl_context(const struct tls *tls);
+SSL_CTX *tls_openssl_context(const struct tls *tls);
+int tls_set_certificate_openssl(struct tls *tls, X509* cert, EVP_PKEY* pkey,
+				bool up_ref);
 #endif

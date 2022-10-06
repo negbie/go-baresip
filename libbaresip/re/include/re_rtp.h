@@ -223,7 +223,8 @@ int   rtp_encode(struct rtp_sock *rs, bool ext, bool marker, uint8_t pt,
 		 uint32_t ts, struct mbuf *mb);
 int   rtp_decode(struct rtp_sock *rs, struct mbuf *mb, struct rtp_header *hdr);
 int   rtp_send(struct rtp_sock *rs, const struct sa *dst, bool ext,
-	       bool marker, uint8_t pt, uint32_t ts, struct mbuf *mb);
+	       bool marker, uint8_t pt, uint32_t ts, uint64_t jfs_rt,
+	       struct mbuf *mb);
 int   rtp_debug(struct re_printf *pf, const struct rtp_sock *rs);
 void *rtp_sock(const struct rtp_sock *rs);
 uint32_t rtp_sess_ssrc(const struct rtp_sock *rs);
@@ -237,6 +238,7 @@ void  rtcp_enable_mux(struct rtp_sock *rs, bool enabled);
 void  rtcp_set_srate(struct rtp_sock *rs, uint32_t sr_tx, uint32_t sr_rx);
 void  rtcp_set_srate_tx(struct rtp_sock *rs, uint32_t srate_tx);
 void  rtcp_set_srate_rx(struct rtp_sock *rs, uint32_t srate_rx);
+int   rtcp_send(struct rtp_sock *rs, struct mbuf *mb);
 int   rtcp_send_app(struct rtp_sock *rs, const char name[4],
 		    const uint8_t *data, size_t len);
 int   rtcp_send_fir(struct rtp_sock *rs, uint32_t ssrc);
