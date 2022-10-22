@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/negbie/go-baresip/telefonist/zip"
+	"github.com/motivq/go-baresip/telefonist/zip"
 )
 
 //go:embed zip/sounds.tar.gz

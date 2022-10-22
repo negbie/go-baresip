@@ -128,6 +128,8 @@ const char *account_medianat(const struct account *acc);
 const char *account_mwi(const struct account *acc);
 const char *account_call_transfer(const struct account *acc);
 const char *account_extra(const struct account *acc);
+int account_uri_complete_strdup(const struct account *acc, char **strp,
+				const struct pl *uri);
 int account_uri_complete(const struct account *acc, struct mbuf *buf,
 			 const char *uri);
 int account_answerdelay(const struct account *acc);
@@ -463,8 +465,18 @@ struct contact *contacts_current(const struct contacts *contacts);
 
 /** Defines a media device */
 struct mediadev {
-	struct le   le;
-	char  *name;
+	struct le le;
+	char *name;
+
+	/* Generic: */
+	struct {
+		uint32_t channels;
+		bool is_default;
+	} src, play;
+
+	/* Module/driver specific: */
+	int host_index;
+	int device_index;
 };
 
 int mediadev_add(struct list *dev_list, const char *name);
@@ -894,6 +906,7 @@ struct ua   *uag_find(const struct pl *cuser);
 struct ua   *uag_find_msg(const struct sip_msg *msg);
 struct ua   *uag_find_aor(const char *aor);
 struct ua   *uag_find_param(const char *name, const char *val);
+struct ua   *uag_find_requri_pl(const struct pl *requri);
 struct ua   *uag_find_requri(const char *requri);
 struct sip  *uag_sip(void);
 struct list *uag_list(void);

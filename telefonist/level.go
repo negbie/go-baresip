@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	gobaresip "github.com/negbie/go-baresip"
+	gobaresip "github.com/motivq/go-baresip"
 )
 
 func eventLevel(e *gobaresip.EventMsg) string {

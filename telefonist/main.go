@@ -7,7 +7,7 @@ import (
 	"net/smtp"
 	"os"
 
-	gobaresip "github.com/negbie/go-baresip"
+	gobaresip "github.com/motivq/go-baresip"
 )
 
 const v = "v0.1.2"
