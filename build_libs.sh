@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #sudo apt update
-#sudo apt install -y autoconf automake libtool pkg-config make cmake gcc zlib1g-dev libssl-dev openssl git wget
+#sudo apt install -y autoconf automake libtool pkg-config make cmake gcc zlib1g-dev libssl-dev openssl git wget libasound2-dev
 
 mkdir -p libbaresip
 cd libbaresip/
@@ -18,7 +18,7 @@ my_codec_modules="g711 g722 opus"
 my_tls_modules="dtls_srtp srtp"
 
 opus="1.3.1"
-openssl="1.1.1k"
+openssl="3.0.5"
 
 sl_extra_cflags="-I ../my_include "
 sl_extra_lflags="-L ../opus -L ../opus/libopus.a -L ../openssl ../openssl/libssl.a ../openssl/libcrypto.a "
